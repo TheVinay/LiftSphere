@@ -6,6 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		8490D07A2EEA419200351B1C /* AppleSignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8490D0792EEA419200351B1C /* AppleSignInView.swift */; };
+		8490D07C2EEA41B600351B1C /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8490D07B2EEA41B600351B1C /* RootView.swift */; };
+		8490D07E2EEA464400351B1C /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8490D07D2EEA464400351B1C /* WelcomeView.swift */; };
+		8490D0802EEA8E9800351B1C /* MuscleHeatmapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8490D07F2EEA8E9800351B1C /* MuscleHeatmapView.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		842446E02EE15B7D0018DAA6 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +34,10 @@
 		842446CF2EE15B790018DAA6 /* VinProWorkoutTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VinProWorkoutTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		842446DF2EE15B7D0018DAA6 /* VinProWorkoutTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VinProWorkoutTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		842446E92EE15B7D0018DAA6 /* VinProWorkoutTrackerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VinProWorkoutTrackerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		8490D0792EEA419200351B1C /* AppleSignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInView.swift; sourceTree = "<group>"; };
+		8490D07B2EEA41B600351B1C /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		8490D07D2EEA464400351B1C /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
+		8490D07F2EEA8E9800351B1C /* MuscleHeatmapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuscleHeatmapView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -75,6 +86,10 @@
 		842446C62EE15B790018DAA6 = {
 			isa = PBXGroup;
 			children = (
+				8490D07F2EEA8E9800351B1C /* MuscleHeatmapView.swift */,
+				8490D07D2EEA464400351B1C /* WelcomeView.swift */,
+				8490D07B2EEA41B600351B1C /* RootView.swift */,
+				8490D0792EEA419200351B1C /* AppleSignInView.swift */,
 				842446D12EE15B790018DAA6 /* VinProWorkoutTracker */,
 				842446E22EE15B7D0018DAA6 /* VinProWorkoutTrackerTests */,
 				842446EC2EE15B7D0018DAA6 /* VinProWorkoutTrackerUITests */,
@@ -236,6 +251,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8490D0802EEA8E9800351B1C /* MuscleHeatmapView.swift in Sources */,
+				8490D07C2EEA41B600351B1C /* RootView.swift in Sources */,
+				8490D07A2EEA419200351B1C /* AppleSignInView.swift in Sources */,
+				8490D07E2EEA464400351B1C /* WelcomeView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -399,11 +418,14 @@
 				DEVELOPMENT_TEAM = 3DR939YJ4V;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = LiftSphere;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -428,11 +450,14 @@
 				DEVELOPMENT_TEAM = 3DR939YJ4V;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = LiftSphere;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
