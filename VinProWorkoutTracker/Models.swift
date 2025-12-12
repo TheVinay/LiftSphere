@@ -7,12 +7,13 @@ class SetEntry {
     var weight: Double
     var reps: Int
     var timestamp: Date
-   
 
-    init(exerciseName: String,
-         weight: Double,
-         reps: Int,
-         timestamp: Date = Date()) {
+    init(
+        exerciseName: String,
+        weight: Double,
+        reps: Int,
+        timestamp: Date = Date()
+    ) {
         self.exerciseName = exerciseName
         self.weight = weight
         self.reps = reps
@@ -24,31 +25,36 @@ class SetEntry {
 class Workout {
     var date: Date
     var name: String
+
+    // Status flags
     var isCompleted: Bool = false
+    var isArchived: Bool = false   // 👈 NEW
 
     // Durations
     var warmupMinutes: Int
     var coreMinutes: Int
     var stretchMinutes: Int
 
-    // Plan (saved as names)
+    // Plan
     var mainExercises: [String]
     var coreExercises: [String]
     var stretches: [String]
 
-    // Logged sets (per exerciseName)
+    // Logged sets
     @Relationship(deleteRule: .cascade)
     var sets: [SetEntry]
 
-    init(date: Date = Date(),
-         name: String,
-         warmupMinutes: Int = 0,
-         coreMinutes: Int = 0,
-         stretchMinutes: Int = 0,
-         mainExercises: [String] = [],
-         coreExercises: [String] = [],
-         stretches: [String] = [],
-         sets: [SetEntry] = []) {
+    init(
+        date: Date = Date(),
+        name: String,
+        warmupMinutes: Int = 0,
+        coreMinutes: Int = 0,
+        stretchMinutes: Int = 0,
+        mainExercises: [String] = [],
+        coreExercises: [String] = [],
+        stretches: [String] = [],
+        sets: [SetEntry] = []
+    ) {
         self.date = date
         self.name = name
         self.warmupMinutes = warmupMinutes

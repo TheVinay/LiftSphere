@@ -37,18 +37,15 @@ struct ContentView: View {
                                         .foregroundStyle(.secondary)
                                 }
                             }
-                            // MARK: - Trailing swipe (Mail-style)
+
+                            // MARK: - Swipe RIGHT → LEFT (Primary)
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
 
                                 // Full swipe = Duplicate
                                 Button {
                                     repeatWorkout(workout)
                                 } label: {
-                                    VStack {
-                                        Image(systemName: "doc.on.doc")
-                                        Text("Duplicate")
-                                            .font(.caption2)
-                                    }
+                                    Label("Duplicate", systemImage: "doc.on.doc")
                                 }
                                 .tint(.blue)
 
@@ -56,12 +53,26 @@ struct ContentView: View {
                                 Button(role: .destructive) {
                                     deleteWorkout(workout)
                                 } label: {
-                                    VStack {
-                                        Image(systemName: "trash")
-                                        Text("Delete")
-                                            .font(.caption2)
-                                    }
+                                    Label("Delete", systemImage: "trash")
                                 }
+                            }
+
+                            // MARK: - Swipe LEFT → RIGHT (Secondary)
+                            .swipeActions(edge: .leading, allowsFullSwipe: false) {
+
+                                Button {
+                                    shareSingleWorkout(workout)
+                                } label: {
+                                    Label("Share", systemImage: "square.and.arrow.up")
+                                }
+                                .tint(.green)
+
+                                Button {
+                                    // Archive – placeholder (non-destructive)
+                                } label: {
+                                    Label("Archive", systemImage: "archivebox")
+                                }
+                                .tint(.gray)
                             }
                         }
                     }
@@ -72,7 +83,7 @@ struct ContentView: View {
                 ToolbarItemGroup(placement: .topBarTrailing) {
 
                     Button {
-                        exportWorkouts()
+                        exportAllWorkouts()
                     } label: {
                         Image(systemName: "square.and.arrow.up")
                     }
@@ -103,7 +114,7 @@ struct ContentView: View {
                 get: { importError != nil },
                 set: { _ in importError = nil }
             )) {
-                Button("OK", role: .cancel) { }
+                Button("OK", role: .cancel) {}
             } message: {
                 Text(importError ?? "Unknown error")
             }
@@ -129,14 +140,36 @@ struct ContentView: View {
             stretches: workout.stretches,
             sets: []
         )
-
         context.insert(copy)
         try? context.save()
     }
 
-    // MARK: - Export
+    // MARK: - Share (single workout)
 
-    private func exportWorkouts() {
+    private func shareSingleWorkout(_ workout: Workout) {
+        do {
+            let export = WorkoutExportFile(
+                exportedAt: Date(),
+                workouts: [ExportedWorkout(from: workout)]
+            )
+
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            let data = try encoder.encode(export)
+
+            let filename = "Workout-\(workout.name)-\(Int(Date().timeIntervalSince1970)).json"
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+            try data.write(to: url, options: .atomic)
+
+            shareItem = ShareItem(url: url)
+        } catch {
+            importError = "Failed to share workout: \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: - Export (all)
+
+    private func exportAllWorkouts() {
         do {
             let export = WorkoutExportFile(
                 exportedAt: Date(),
@@ -202,12 +235,12 @@ struct ContentView: View {
 
 // MARK: - Export models
 
-private struct WorkoutExportFile: Codable {
+struct WorkoutExportFile: Codable {
     let exportedAt: Date
     let workouts: [ExportedWorkout]
 }
 
-private struct ExportedWorkout: Codable {
+struct ExportedWorkout: Codable {
     let date: Date
     let name: String
     let warmupMinutes: Int
@@ -238,21 +271,21 @@ private struct ExportedWorkout: Codable {
     }
 }
 
-private struct ExportedSet: Codable {
+struct ExportedSet: Codable {
     let exerciseName: String
     let weight: Double
     let reps: Int
     let timestamp: Date
 }
 
-// MARK: - Share sheet
+// MARK: - Share helpers
 
-private struct ShareItem: Identifiable {
+struct ShareItem: Identifiable {
     let id = UUID()
     let url: URL
 }
 
-private struct ActivityView: UIViewControllerRepresentable {
+struct ActivityView: UIViewControllerRepresentable {
     let activityItems: [Any]
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
