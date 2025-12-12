@@ -11,8 +11,6 @@ struct ContentView: View {
     @State private var isImporting = false
     @State private var importError: String?
 
-
-
     var body: some View {
         NavigationStack {
             Group {
@@ -26,48 +24,65 @@ struct ContentView: View {
                             NavigationLink {
                                 WorkoutDetailView(workout: workout)
                             } label: {
-                                VStack(alignment: .leading) {
+                                VStack(alignment: .leading, spacing: 4) {
                                     Text(workout.name)
                                         .font(.headline)
+
                                     Text(workout.date.formatted(date: .abbreviated, time: .shortened))
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
+
                                     Text("Volume: \(Int(workout.totalVolume))")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
                             }
-                            .swipeActions {
+                            // MARK: - Trailing swipe (Mail-style)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+
+                                // Full swipe = Duplicate
                                 Button {
                                     repeatWorkout(workout)
                                 } label: {
-                                    Label("Repeat", systemImage: "arrow.clockwise")
+                                    VStack {
+                                        Image(systemName: "doc.on.doc")
+                                        Text("Duplicate")
+                                            .font(.caption2)
+                                    }
                                 }
                                 .tint(.blue)
+
+                                // Delete
+                                Button(role: .destructive) {
+                                    deleteWorkout(workout)
+                                } label: {
+                                    VStack {
+                                        Image(systemName: "trash")
+                                        Text("Delete")
+                                            .font(.caption2)
+                                    }
+                                }
                             }
                         }
-                        .onDelete(perform: deleteWorkouts)
                     }
                 }
             }
             .navigationTitle("Workouts")
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
-                    // Export button
+
                     Button {
                         exportWorkouts()
                     } label: {
                         Image(systemName: "square.and.arrow.up")
                     }
 
-                    // Import button
                     Button {
                         isImporting = true
                     } label: {
                         Image(systemName: "tray.and.arrow.down")
                     }
 
-                    // New workout
                     NavigationLink {
                         NewWorkoutView()
                     } label: {
@@ -75,11 +90,9 @@ struct ContentView: View {
                     }
                 }
             }
-            // Share sheet for export – only appears when shareURL is non-nil
             .sheet(item: $shareItem) { item in
                 ActivityView(activityItems: [item.url])
             }
-            // File importer for import
             .fileImporter(
                 isPresented: $isImporting,
                 allowedContentTypes: [.json]
@@ -97,17 +110,13 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - Data actions
+    // MARK: - Row actions
 
-    private func deleteWorkouts(at offsets: IndexSet) {
-        for index in offsets {
-            let w = workouts[index]
-            context.delete(w)
-        }
+    private func deleteWorkout(_ workout: Workout) {
+        context.delete(workout)
         try? context.save()
     }
 
-    // Duplicate an existing workout as a new one for today (no sets)
     private func repeatWorkout(_ workout: Workout) {
         let copy = Workout(
             date: Date(),
@@ -118,7 +127,7 @@ struct ContentView: View {
             mainExercises: workout.mainExercises,
             coreExercises: workout.coreExercises,
             stretches: workout.stretches,
-            sets: [] // fresh run
+            sets: []
         )
 
         context.insert(copy)
@@ -142,13 +151,11 @@ struct ContentView: View {
             let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
             try data.write(to: url, options: .atomic)
 
-            // Trigger share sheet
             shareItem = ShareItem(url: url)
         } catch {
             importError = "Failed to export workouts: \(error.localizedDescription)"
         }
     }
-
 
     // MARK: - Import
 
@@ -178,10 +185,9 @@ struct ContentView: View {
                     let newSet = SetEntry(
                         exerciseName: s.exerciseName,
                         weight: s.weight,
-                        reps: s.reps
+                        reps: s.reps,
+                        timestamp: s.timestamp
                     )
-                    // Preserve original timestamp if your model allows it
-                    newSet.timestamp = s.timestamp
                     newWorkout.sets.append(newSet)
                     context.insert(newSet)
                 }
@@ -221,13 +227,12 @@ private struct ExportedWorkout: Codable {
         mainExercises = workout.mainExercises
         coreExercises = workout.coreExercises
         stretches = workout.stretches
-
-        sets = workout.sets.map { s in
+        sets = workout.sets.map {
             ExportedSet(
-                exerciseName: s.exerciseName,
-                weight: s.weight,
-                reps: s.reps,
-                timestamp: s.timestamp
+                exerciseName: $0.exerciseName,
+                weight: $0.weight,
+                reps: $0.reps,
+                timestamp: $0.timestamp
             )
         }
     }
@@ -240,7 +245,12 @@ private struct ExportedSet: Codable {
     let timestamp: Date
 }
 
-// MARK: - UIKit share sheet wrapper
+// MARK: - Share sheet
+
+private struct ShareItem: Identifiable {
+    let id = UUID()
+    let url: URL
+}
 
 private struct ActivityView: UIViewControllerRepresentable {
     let activityItems: [Any]
@@ -249,16 +259,8 @@ private struct ActivityView: UIViewControllerRepresentable {
         UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
     }
 
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) { }
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
-
-// MARK: - Preview
-
-private struct ShareItem: Identifiable {
-    let id = UUID()
-    let url: URL
-}
-
 
 #Preview {
     ContentView()
