@@ -15,12 +15,12 @@ struct AnalyticsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
 
+                    weeklySummaryCard
                     streaksCard
                     consistencyCalendarCard
                     muscleHeatmapCard
                     coachRecommendationCard
 
-                    // Existing cards
                     summaryCard
                     if !workouts.isEmpty { volumeOverTimeCard }
                     if !sets.isEmpty { topExercisesCard }
@@ -33,40 +33,107 @@ struct AnalyticsView: View {
     }
 
     // ----------------------------------------------------------------------
-    // MARK: - FEATURE 7: STREAKS CARD
+    // MARK: - WEEKLY SUMMARY (NEW)
     // ----------------------------------------------------------------------
 
-    private var streaksCard: some View {
-        let streak = currentStreak()
-        let longest = longestStreak()
-        let workoutsThisMonth = workoutsInCurrentMonth()
+    private var weeklySummaryCard: some View {
+        let thisWeek = weekStats(offset: 0)
+        let lastWeek = weekStats(offset: -1)
 
-        return analyticsCard(title: "Streaks & Activity") {
-            HStack {
-                statBox("Current streak", "\(streak) days")
-                Spacer()
-                statBox("Longest streak", "\(longest)")
-                Spacer()
-                statBox("This month", "\(workoutsThisMonth)")
+        let volumeDeltaPct: String = {
+            guard lastWeek.volume > 0 else { return "–" }
+            let delta = (thisWeek.volume - lastWeek.volume) / lastWeek.volume * 100
+            return String(format: "%+.0f%%", delta)
+        }()
+
+        return analyticsCard(title: "Weekly Summary",
+                             subtitle: "This week vs last week") {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    statBox("Workouts", "\(thisWeek.workouts)")
+                    Spacer()
+                    statBox("Volume", "\(Int(thisWeek.volume))")
+                    Spacer()
+                    statBox("Δ Volume", volumeDeltaPct)
+                }
+
+                if let muscle = thisWeek.topMuscle {
+                    Text("Focus muscle: \(muscle.displayName)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
-            .padding(.top, 4)
         }
     }
 
-    // Calculate streak
+    private struct WeekStats {
+        let workouts: Int
+        let volume: Double
+        let topMuscle: MuscleGroup?
+    }
+
+    private func weekStats(offset: Int) -> WeekStats {
+        let startOfWeek = calendar.date(
+            from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear],
+            from: calendar.date(byAdding: .weekOfYear, value: offset, to: Date())!)
+        )!
+
+        let endOfWeek = calendar.date(byAdding: .day, value: 7, to: startOfWeek)!
+
+        let weekWorkouts = workouts.filter {
+            $0.date >= startOfWeek && $0.date < endOfWeek
+        }
+
+        let weekSets = sets.filter {
+            $0.timestamp >= startOfWeek && $0.timestamp < endOfWeek
+        }
+
+        var muscleVolume: [MuscleGroup: Double] = [:]
+
+        for set in weekSets {
+            if let template = ExerciseLibrary.all.first(where: { $0.name == set.exerciseName }) {
+                muscleVolume[template.muscleGroup, default: 0] += set.weight * Double(set.reps)
+            }
+        }
+
+        let topMuscle = muscleVolume.max(by: { $0.value < $1.value })?.key
+        let totalVolume = weekSets.reduce(0) { $0 + ($1.weight * Double($1.reps)) }
+
+        return WeekStats(
+            workouts: weekWorkouts.count,
+            volume: totalVolume,
+            topMuscle: topMuscle
+        )
+    }
+
+    // ----------------------------------------------------------------------
+    // MARK: - STREAKS
+    // ----------------------------------------------------------------------
+
+    private var streaksCard: some View {
+        analyticsCard(title: "Streaks & Activity") {
+            HStack {
+                statBox("Current", "\(currentStreak()) days")
+                Spacer()
+                statBox("Longest", "\(longestStreak())")
+                Spacer()
+                statBox("This month", "\(workoutsInCurrentMonth())")
+            }
+        }
+    }
+
     private func currentStreak() -> Int {
-        guard !workouts.isEmpty else { return 0 }
         let sorted = workouts.sorted { $0.date > $1.date }
+        guard !sorted.isEmpty else { return 0 }
 
         var streak = 1
         for i in 1..<sorted.count {
-            let dayGap = calendar.dateComponents([.day],
+            let gap = calendar.dateComponents([.day],
                 from: calendar.startOfDay(for: sorted[i].date),
                 to: calendar.startOfDay(for: sorted[i - 1].date)
             ).day ?? 99
 
-            if dayGap == 1 { streak += 1 }
-            else { break }
+            if gap == 1 { streak += 1 } else { break }
         }
         return streak
     }
@@ -76,48 +143,48 @@ struct AnalyticsView: View {
 
         let sorted = workouts.sorted { $0.date > $1.date }
         var longest = 1
-        var streak = 1
+        var current = 1
 
         for i in 1..<sorted.count {
-            let dayGap = calendar.dateComponents([.day],
+            let gap = calendar.dateComponents([.day],
                 from: calendar.startOfDay(for: sorted[i].date),
                 to: calendar.startOfDay(for: sorted[i - 1].date)
             ).day ?? 99
 
-            if dayGap == 1 {
-                streak += 1
-                longest = max(longest, streak)
+            if gap == 1 {
+                current += 1
+                longest = max(longest, current)
             } else {
-                streak = 1
+                current = 1
             }
         }
         return longest
     }
 
     private func workoutsInCurrentMonth() -> Int {
-        guard !workouts.isEmpty else { return 0 }
-        let now = Date()
-        return workouts.filter { calendar.isDate($0.date, equalTo: now, toGranularity: .month) }.count
+        workouts.filter {
+            calendar.isDate($0.date, equalTo: Date(), toGranularity: .month)
+        }.count
     }
 
     // ----------------------------------------------------------------------
-    // MARK: - FEATURE 7 PART 2: CONSISTENCY CALENDAR (28 days)
+    // MARK: - CONSISTENCY CALENDAR
     // ----------------------------------------------------------------------
 
     private var consistencyCalendarCard: some View {
         analyticsCard(title: "Consistency (Last 28 Days)") {
             let days = last28Days()
-            let daysWithWorkouts = Set(workouts.map { calendar.startOfDay(for: $0.date) })
+            let activeDays = Set(workouts.map { calendar.startOfDay(for: $0.date) })
 
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 10) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7)) {
                 ForEach(days, id: \.self) { day in
-                    let active = daysWithWorkouts.contains(day)
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(active ? Color.green.opacity(0.9) : Color.gray.opacity(0.2))
+                        .fill(activeDays.contains(day)
+                              ? Color.green.opacity(0.85)
+                              : Color.gray.opacity(0.2))
                         .frame(width: 22, height: 22)
                 }
             }
-            .padding(.top, 4)
         }
     }
 
@@ -129,60 +196,53 @@ struct AnalyticsView: View {
     }
 
     // ----------------------------------------------------------------------
-    // MARK: - FEATURE 11: MUSCLE ACTIVATION HEATMAP
+    // MARK: - MUSCLE HEATMAP
     // ----------------------------------------------------------------------
 
     private var muscleHeatmapCard: some View {
-        analyticsCard(title: "Muscle Activation Heatmap") {
+        analyticsCard(title: "Muscle Activation (30 Days)") {
             let volumes = muscleVolumesLast30Days()
             let maxVal = volumes.values.max() ?? 1
 
-            LazyVGrid(columns: [
-                GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())
-            ], spacing: 16) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3)) {
                 ForEach(MuscleGroup.allCases) { group in
                     let value = volumes[group] ?? 0
                     let intensity = max(0.1, value / maxVal)
 
                     VStack {
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.red.opacity(Double(intensity)))
+                            .fill(Color.red.opacity(intensity))
                             .frame(height: 50)
 
                         Text(group.displayName)
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
-            .padding(.top, 6)
         }
     }
 
-    // Sum volume per muscle group
     private func muscleVolumesLast30Days() -> [MuscleGroup: Double] {
-        let cutoff = calendar.date(byAdding: .day, value: -30, to: Date()) ?? Date.distantPast
+        let cutoff = calendar.date(byAdding: .day, value: -30, to: Date())!
         let recent = sets.filter { $0.timestamp >= cutoff }
 
         var dict: [MuscleGroup: Double] = [:]
-
         for set in recent {
-            guard let template = ExerciseLibrary.all.first(where: { $0.name == set.exerciseName }) else { continue }
-            let group = template.muscleGroup
-            let vol = set.weight * Double(set.reps)
-            dict[group, default: 0] += vol
+            if let template = ExerciseLibrary.all.first(where: { $0.name == set.exerciseName }) {
+                dict[template.muscleGroup, default: 0] += set.weight * Double(set.reps)
+            }
         }
-
         return dict
     }
 
     // ----------------------------------------------------------------------
-    // MARK: - FEATURE 12: AI COACH VIN
+    // MARK: - COACH VIN (ENHANCED)
     // ----------------------------------------------------------------------
 
     private var coachRecommendationCard: some View {
         analyticsCard(title: "Coach Vin Suggests") {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 8) {
                 ForEach(coachMessages(), id: \.self) { msg in
                     HStack(alignment: .top) {
                         Image(systemName: "sparkles")
@@ -192,113 +252,87 @@ struct AnalyticsView: View {
                     }
                 }
             }
-            .padding(.top, 4)
         }
     }
 
     private func coachMessages() -> [String] {
         var messages: [String] = []
 
-        // Streak-based
         let streak = currentStreak()
-        if streak >= 5 {
-            messages.append("🔥 You’re on a \(streak)-day streak—keep the momentum!")
-        } else if streak == 0 {
-            messages.append("👟 Time to start a new streak today.")
+        if streak >= 7 {
+            messages.append("🟡 You’ve trained \(streak) days straight. Consider a light or recovery day.")
+        } else if streak >= 4 {
+            messages.append("🔥 Strong consistency with a \(streak)-day streak.")
         }
 
-        // Missing workouts
         if let last = workouts.last?.date {
-            let gap = calendar.dateComponents([ .day ], from: last, to: Date()).day ?? 0
+            let gap = calendar.dateComponents([.day], from: last, to: Date()).day ?? 0
             if gap >= 3 {
-                messages.append("💡 You haven’t trained in \(gap) days. A light session would reboot momentum.")
+                messages.append("💡 It’s been \(gap) days since your last workout. A short session could restart momentum.")
             }
         }
 
-        // Muscle imbalance check
-        let muscle = muscleVolumesLast30Days()
-        if let maxMuscle = muscle.max(by: { $0.value < $1.value })?.key {
-            messages.append("📌 Your most trained muscle group recently: \(maxMuscle.displayName). Consider balancing with other groups.")
+        let muscleVolume = muscleVolumesLast30Days()
+        if let dominant = muscleVolume.max(by: { $0.value < $1.value })?.key {
+            messages.append("⚖️ \(dominant.displayName) is dominating recent volume. Balance with other muscle groups.")
         }
 
-        // Volume spike warning
         if workouts.count >= 3 {
             let last3 = workouts.suffix(3).map { $0.totalVolume }
-            if last3.count == 3,
-               last3[2] > last3[1] * 1.35 {
-                messages.append("⚠️ Volume jumped sharply yesterday. Consider a deload or mobility day.")
+            if last3.count == 3 && last3[2] > last3[1] * 1.35 {
+                messages.append("⚠️ Sharp volume spike detected. A deload or mobility day may help recovery.")
             }
         }
 
         if messages.isEmpty {
-            messages.append("💪 Keep training! You're building a great foundation.")
+            messages.append("💪 Keep building momentum. You’re on a solid path.")
         }
 
         return messages
     }
 
     // ----------------------------------------------------------------------
-    // MARK: - Existing Cards (summary, volume, top exercises)
+    // MARK: - EXISTING CARDS
     // ----------------------------------------------------------------------
 
     private var summaryCard: some View {
-        let totalVolume = sets.reduce(0.0) { $0 + ($1.weight * Double($1.reps)) }
+        let totalVolume = sets.reduce(0) { $0 + ($1.weight * Double($1.reps)) }
 
         return analyticsCard(title: "Overview") {
             HStack {
                 statBox("Workouts", "\(workouts.count)")
                 Spacer()
-                statBox("Sets Logged", "\(sets.count)")
+                statBox("Sets", "\(sets.count)")
                 Spacer()
-                statBox("Total Volume", "\(Int(totalVolume))")
+                statBox("Volume", "\(Int(totalVolume))")
             }
         }
     }
 
     private var volumeOverTimeCard: some View {
-        let points = workoutVolumePoints()
-
-        return analyticsCard(title: "Volume Over Time",
-                             subtitle: "Total volume per workout") {
-            if points.isEmpty {
-                Text("Log a few workouts to see volume trends.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } else {
-                Chart(points) { pt in
-                    LineMark(x: .value("Date", pt.date),
-                             y: .value("Volume", pt.volume))
-                    PointMark(x: .value("Date", pt.date),
-                              y: .value("Volume", pt.volume))
-                }
-                .frame(height: 220)
+        analyticsCard(title: "Volume Over Time") {
+            Chart(workoutVolumePoints()) { pt in
+                LineMark(x: .value("Date", pt.date),
+                         y: .value("Volume", pt.volume))
             }
+            .frame(height: 220)
         }
     }
 
     private var topExercisesCard: some View {
         let rows = topExercisesByVolume(limit: 5)
 
-        return analyticsCard(title: "Top Exercises",
-                             subtitle: "By total volume (weight × reps)") {
-            if rows.isEmpty {
-                Text("Log some sets to see your strongest lifts.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } else {
-                Chart(rows) { row in
-                    BarMark(
-                        x: .value("Volume", row.volume),
-                        y: .value("Exercise", row.name)
-                    )
-                }
-                .frame(height: max(160, CGFloat(rows.count) * 32))
+        return analyticsCard(title: "Top Exercises") {
+            Chart(rows) { row in
+                BarMark(x: .value("Volume", row.volume),
+                        y: .value("Exercise", row.name))
             }
+            .frame(height: CGFloat(rows.count) * 32 + 40)
         }
     }
 
     // ----------------------------------------------------------------------
-    // MARK: - Helpers
+    // MARK: - HELPERS
     // ----------------------------------------------------------------------
 
     private func analyticsCard<Content: View>(
@@ -309,9 +343,7 @@ struct AnalyticsView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title).font(.headline)
             if let subtitle = subtitle {
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text(subtitle).font(.caption).foregroundStyle(.secondary)
             }
             content()
         }
@@ -328,51 +360,40 @@ struct AnalyticsView: View {
     }
 
     private func statBox(_ title: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(value)
-                .font(.title3.bold())
-            Text(title)
-                .font(.caption)
-                .foregroundColor(.secondary)
+        VStack(alignment: .leading) {
+            Text(value).font(.title3.bold())
+            Text(title).font(.caption).foregroundStyle(.secondary)
         }
     }
 
-    struct VolumePoint: Identifiable {
+    private struct VolumePoint: Identifiable {
         let id = UUID()
         let date: Date
         let volume: Double
     }
 
     private func workoutVolumePoints() -> [VolumePoint] {
-        workouts.sorted { $0.date < $1.date }.map {
+        workouts.map {
             VolumePoint(date: $0.date, volume: $0.totalVolume)
         }
     }
 
-    struct ExerciseVolumeRow: Identifiable {
+    private struct ExerciseVolumeRow: Identifiable {
         let id = UUID()
         let name: String
         let volume: Double
     }
 
     private func topExercisesByVolume(limit: Int) -> [ExerciseVolumeRow] {
-        guard !sets.isEmpty else { return [] }
-
         let grouped = Dictionary(grouping: sets, by: { $0.exerciseName })
-
-        return grouped.map { (name, groupSets) in
+        return grouped.map { name, sets in
             ExerciseVolumeRow(
                 name: name,
-                volume: groupSets.reduce(0) { $0 + ($1.weight * Double($1.reps)) }
+                volume: sets.reduce(0) { $0 + ($1.weight * Double($1.reps)) }
             )
         }
         .sorted { $0.volume > $1.volume }
         .prefix(limit)
         .map { $0 }
     }
-}
-
-#Preview {
-    AnalyticsView()
-        .modelContainer(for: [Workout.self, SetEntry.self], inMemory: true)
 }

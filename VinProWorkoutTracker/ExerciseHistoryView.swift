@@ -11,31 +11,51 @@ struct ExerciseHistoryView: View {
     @Query(sort: \SetEntry.timestamp, order: .reverse)
     private var allSets: [SetEntry]
 
-    // Local input state for adding a set
+    // Local input state
     @State private var weightText: String = ""
     @State private var repsText: String = ""
 
-    // Global last/best for quick-fill buttons
-    private var lastGlobalSet: SetEntry? {
-        allSets.first { $0.exerciseName == exerciseName }
+    // PR banner state
+    @State private var prMessage: String? = nil
+
+    // MARK: - Derived sets
+
+    private var setsForExercise: [SetEntry] {
+        allSets.filter { $0.exerciseName == exerciseName }
     }
 
-    private var bestGlobalSet: SetEntry? {
-        let sets = allSets.filter { $0.exerciseName == exerciseName }
-        return sets.max { a, b in
-            if a.weight == b.weight {
-                return a.reps < b.reps
-            } else {
-                return a.weight < b.weight
-            }
-        }
+    private var todaySets: [SetEntry] {
+        workout.sets.filter { $0.exerciseName == exerciseName }
     }
+
+    // MARK: - Global bests (before adding new set)
+
+    private var bestWeightSoFar: Double {
+        setsForExercise.map(\.weight).max() ?? 0
+    }
+
+    private var best1RMSoFar: Double {
+        setsForExercise
+            .map { estimated1RM(weight: $0.weight, reps: $0.reps) }
+            .max() ?? 0
+    }
+
+    // MARK: - Body
 
     var body: some View {
-        let setsForExercise = allSets.filter { $0.exerciseName == exerciseName }
-        let todaySets = workout.sets.filter { $0.exerciseName == exerciseName }
-
         List {
+            // PR banner
+            if let msg = prMessage {
+                Section {
+                    HStack {
+                        Image(systemName: "trophy.fill")
+                            .foregroundColor(.yellow)
+                        Text(msg)
+                            .font(.subheadline.weight(.semibold))
+                    }
+                }
+            }
+
             // Add set
             Section("Add set") {
                 Text(exerciseName)
@@ -48,41 +68,16 @@ struct ExerciseHistoryView: View {
                 TextField("Reps", text: $repsText)
                     .keyboardType(.numberPad)
 
-                // Quick-fill bar
-                if lastGlobalSet != nil || bestGlobalSet != nil {
-                    HStack {
-                        if let last = lastGlobalSet {
-                            Button("Last \(formatWeight(last.weight))") {
-                                weightText = formatWeight(last.weight)
-                            }
-                        }
-                        if let best = bestGlobalSet {
-                            Button("Best \(formatWeight(best.weight))") {
-                                weightText = formatWeight(best.weight)
-                            }
-                        }
-
-                        Button("-5") {
-                            adjustWeight(by: -5)
-                        }
-                        Button("+5") {
-                            adjustWeight(by: 5)
-                        }
-                    }
-                    .font(.caption)
-                    .buttonStyle(.bordered)
-                }
-
                 Button("Add set") {
                     addSet()
                 }
                 .disabled(weightText.isEmpty || repsText.isEmpty)
             }
 
-            // Today in this workout
+            // Today
             Section("This workout") {
                 if todaySets.isEmpty {
-                    Text("No sets logged yet for \(exerciseName) in this workout.")
+                    Text("No sets logged yet.")
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(todaySets.sorted(by: { $0.timestamp > $1.timestamp })) { set in
@@ -95,17 +90,10 @@ struct ExerciseHistoryView: View {
                 }
             }
 
-            // All-time PR and history
-            let best = bestSet(sets: setsForExercise)
-            if let best = best {
-                Section("Personal record") {
-                    Text("Best: \(formatWeight(best.weight)) x \(best.reps)")
-                }
-            }
-
+            // All-time history
             Section("All sets (all workouts)") {
                 if setsForExercise.isEmpty {
-                    Text("No sets logged yet for \(exerciseName).")
+                    Text("No sets logged yet.")
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(setsForExercise) { set in
@@ -122,51 +110,60 @@ struct ExerciseHistoryView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    private func bestSet(sets: [SetEntry]) -> SetEntry? {
-        sets.max { a, b in
-            if a.weight == b.weight {
-                return a.reps < b.reps
-            } else {
-                return a.weight < b.weight
-            }
-        }
-    }
+    // MARK: - Add set + PR detection
 
     private func addSet() {
         guard let weight = Double(weightText),
-              let reps = Int(repsText) else { return }
+              let reps = Int(repsText),
+              reps > 0 else { return }
 
+        // PR detection BEFORE save
+        let new1RM = estimated1RM(weight: weight, reps: reps)
+
+        var newPRMessages: [String] = []
+
+        if weight > bestWeightSoFar {
+            newPRMessages.append("Heaviest weight")
+        }
+
+        if new1RM > best1RMSoFar {
+            newPRMessages.append("Estimated 1RM")
+        }
+
+        // Save set
         let newSet = SetEntry(
             exerciseName: exerciseName,
             weight: weight,
             reps: reps
         )
 
-        // Attach to this workout and context
         workout.sets.append(newSet)
         context.insert(newSet)
         try? context.save()
+
+        // Show PR banner if needed
+        if !newPRMessages.isEmpty {
+            prMessage = "New PR! " + newPRMessages.joined(separator: " • ")
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                withAnimation {
+                    prMessage = nil
+                }
+            }
+        }
 
         weightText = ""
         repsText = ""
     }
 
-    private func formatWeight(_ w: Double) -> String {
-        String(format: "%.1f", w)
+    // MARK: - Helpers
+
+    private func estimated1RM(weight: Double, reps: Int) -> Double {
+        weight * (1 + Double(reps) / 30.0)
     }
 
-    private func adjustWeight(by delta: Double) {
-        let current: Double
-        if let val = Double(weightText) {
-            current = val
-        } else if let last = lastGlobalSet?.weight {
-            current = last
-        } else {
-            current = 0
-        }
-
-        let newVal = max(0, current + delta)
-        weightText = formatWeight(newVal)
+    private func formatWeight(_ w: Double) -> String {
+        String(format: "%.1f", w)
     }
 }
 
@@ -174,17 +171,12 @@ struct ExerciseHistoryView: View {
     let w = Workout(
         date: Date(),
         name: "Demo Workout",
-        warmupMinutes: 5,
-        coreMinutes: 5,
-        stretchMinutes: 5,
-        mainExercises: ["Dumbbell Hammer Curl"],
-        coreExercises: [],
-        stretches: [],
+        mainExercises: ["Lat Pulldown"],
         sets: []
     )
 
     return NavigationStack {
-        ExerciseHistoryView(workout: w, exerciseName: "Dumbbell Hammer Curl")
+        ExerciseHistoryView(workout: w, exerciseName: "Lat Pulldown")
     }
     .modelContainer(for: [Workout.self, SetEntry.self], inMemory: true)
 }
