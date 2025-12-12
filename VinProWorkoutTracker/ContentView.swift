@@ -24,24 +24,47 @@ struct ContentView: View {
                             NavigationLink {
                                 WorkoutDetailView(workout: workout)
                             } label: {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(workout.name)
-                                        .font(.headline)
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(workout.name)
+                                            .font(.headline)
 
-                                    Text(workout.date.formatted(date: .abbreviated, time: .shortened))
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
+                                        Text(workout.date.formatted(date: .abbreviated, time: .shortened))
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
 
-                                    Text("Volume: \(Int(workout.totalVolume))")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        Text("Volume: \(Int(workout.totalVolume))")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+
+                                    Spacer()
+
+                                    // ✅ Completed indicator
+                                    if workout.isCompleted {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundColor(.green)
+                                            .imageScale(.large)
+                                    }
                                 }
+                                .opacity(workout.isCompleted ? 0.6 : 1.0)
                             }
 
                             // MARK: - Swipe RIGHT → LEFT (Primary)
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
 
-                                // Full swipe = Duplicate
+                                // Complete / Undo
+                                Button {
+                                    toggleCompleted(workout)
+                                } label: {
+                                    Label(
+                                        workout.isCompleted ? "Undo" : "Complete",
+                                        systemImage: workout.isCompleted ? "arrow.uturn.backward" : "checkmark"
+                                    )
+                                }
+                                .tint(.green)
+
+                                // Duplicate
                                 Button {
                                     repeatWorkout(workout)
                                 } label: {
@@ -68,7 +91,7 @@ struct ContentView: View {
                                 .tint(.green)
 
                                 Button {
-                                    // Archive – placeholder (non-destructive)
+                                    // Archive placeholder (later)
                                 } label: {
                                     Label("Archive", systemImage: "archivebox")
                                 }
@@ -122,6 +145,11 @@ struct ContentView: View {
     }
 
     // MARK: - Row actions
+
+    private func toggleCompleted(_ workout: Workout) {
+        workout.isCompleted.toggle()
+        try? context.save()
+    }
 
     private func deleteWorkout(_ workout: Workout) {
         context.delete(workout)
