@@ -49,16 +49,21 @@ struct AnalyticsView: View {
     // MARK: - Time Range / Metric
 
     enum TimeRange: String, CaseIterable, Identifiable {
+        case days7  = "Last 7 days"
+        case days15 = "Last 15 days"
         case days30 = "Last 30 days"
         case days90 = "Last 90 days"
-        case all = "All time"
+        case all    = "All time"
+
         var id: String { rawValue }
 
         func cutoff(calendar: Calendar) -> Date? {
             switch self {
+            case .days7:  return calendar.date(byAdding: .day, value: -7, to: Date())
+            case .days15: return calendar.date(byAdding: .day, value: -15, to: Date())
             case .days30: return calendar.date(byAdding: .day, value: -30, to: Date())
             case .days90: return calendar.date(byAdding: .day, value: -90, to: Date())
-            case .all: return nil
+            case .all:    return nil
             }
         }
     }
@@ -267,6 +272,32 @@ struct AnalyticsView: View {
             }
         }
     }
+    
+    
+    
+    private func nearestMuscle(from size: CGSize, muscles: [MuscleGroup]) -> MuscleGroup? {
+        let center = CGPoint(x: size.width / 2, y: size.height / 2)
+        let location = CGPoint(x: center.x, y: 0) // tap already inside polygon
+
+        let angle = atan2(location.y - center.y, location.x - center.x)
+
+        let normalized = angle < -(.pi / 2)
+            ? angle + 2 * .pi
+            : angle
+
+        let index = Int(
+            round((normalized + .pi / 2) / (2 * .pi) * Double(muscles.count))
+        ) % muscles.count
+
+        return muscles[index]
+    }
+
+    
+    
+    
+    
+    
+    
 
     private func distributionValues() -> [MuscleGroup: Double] {
         let relevantSets: [SetEntry]
@@ -347,6 +378,22 @@ struct AnalyticsView: View {
                         path.closeSubpath()
                     }
                     .fill(Color.blue.opacity(0.35))
+                    .contentShape(Rectangle())
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onEnded { value in
+                                let muscle = nearestMuscle(
+                                    tap: value.location,
+                                    size: geo.size,
+                                    muscles: muscles
+                                )
+
+                                selectedMuscle =
+                                    (selectedMuscle == muscle) ? nil : muscle
+                            }
+                    )
+
+
 
                     Path { path in
                         for i in muscles.indices {
@@ -371,6 +418,34 @@ struct AnalyticsView: View {
         private func angleFor(index: Int, count: Int) -> CGFloat {
             CGFloat(Double(index) / Double(count) * 2 * .pi - .pi / 2)
         }
+        
+        
+        
+        private func nearestMuscle(
+            tap: CGPoint,
+            size: CGSize,
+            muscles: [MuscleGroup]
+        ) -> MuscleGroup {
+
+            let center = CGPoint(x: size.width / 2, y: size.height / 2)
+
+            let angle = atan2(
+                tap.y - center.y,
+                tap.x - center.x
+            )
+
+            // Rotate so 0 starts at top
+            let adjusted = angle + .pi / 2
+            let normalized = adjusted < 0 ? adjusted + 2 * .pi : adjusted
+
+            let slice = 2 * .pi / Double(muscles.count)
+            let index = Int(normalized / slice) % muscles.count
+
+            return muscles[index]
+        }
+
+        
+        
     }
 
 
