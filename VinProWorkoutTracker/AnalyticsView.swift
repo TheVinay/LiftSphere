@@ -13,6 +13,9 @@ struct AnalyticsView: View {
     // MARK: - Controls
     @State private var selectedRange: TimeRange = .days30
     @State private var selectedMetric: MetricType = .volume
+    @State private var selectedMuscle: MuscleGroup? = nil
+    
+
 
     var body: some View {
         NavigationStack {
@@ -256,8 +259,10 @@ struct AnalyticsView: View {
 
                 RadarChartView(
                     values: distributionValues(),
-                    maxValue: distributionValues().values.max() ?? 1
+                    maxValue: distributionValues().values.max() ?? 1,
+                    selectedMuscle: $selectedMuscle
                 )
+
                 .frame(height: 260)
             }
         }
@@ -289,6 +294,7 @@ struct AnalyticsView: View {
     private struct RadarChartView: View {
         let values: [MuscleGroup: Double]
         let maxValue: Double
+        @Binding var selectedMuscle: MuscleGroup?
 
         var body: some View {
             GeometryReader { geo in
@@ -296,39 +302,69 @@ struct AnalyticsView: View {
                 let radius = min(geo.size.width, geo.size.height) / 2 - 20
                 let muscles = MuscleGroup.allCases
 
-                Path { path in
-                    for i in muscles.indices {
+                ZStack {
+                    ForEach(muscles.indices, id: \.self) { i in
                         let angle = angleFor(index: i, count: muscles.count)
-                        let value = values[muscles[i]] ?? 0
-                        let scaled = CGFloat(value / maxValue) * radius
-
-                        let point = CGPoint(
-                            x: center.x + cos(angle) * scaled,
-                            y: center.y + sin(angle) * scaled
+                        let end = CGPoint(
+                            x: center.x + cos(angle) * radius,
+                            y: center.y + sin(angle) * radius
                         )
 
-                        i == 0 ? path.move(to: point) : path.addLine(to: point)
+                        Path {
+                            $0.move(to: center)
+                            $0.addLine(to: end)
+                        }
+                        .stroke(Color.gray.opacity(0.4), lineWidth: 1)
+
+                        Text(muscles[i].displayName)
+                            .font(.caption)
+                            .foregroundStyle(
+                                selectedMuscle == muscles[i] ? .blue : .secondary
+                            )
+                            .position(
+                                x: center.x + cos(angle) * (radius + 16),
+                                y: center.y + sin(angle) * (radius + 16)
+                            )
+                            .onTapGesture {
+                                selectedMuscle =
+                                    selectedMuscle == muscles[i] ? nil : muscles[i]
+                            }
                     }
-                    path.closeSubpath()
-                }
-                .fill(Color.blue.opacity(0.35))
 
-                Path { path in
-                    for i in muscles.indices {
-                        let angle = angleFor(index: i, count: muscles.count)
-                        let value = values[muscles[i]] ?? 0
-                        let scaled = CGFloat(value / maxValue) * radius
+                    Path { path in
+                        for i in muscles.indices {
+                            let angle = angleFor(index: i, count: muscles.count)
+                            let value = values[muscles[i]] ?? 0
+                            let scaled = CGFloat(value / maxValue) * radius
 
-                        let point = CGPoint(
-                            x: center.x + cos(angle) * scaled,
-                            y: center.y + sin(angle) * scaled
-                        )
+                            let point = CGPoint(
+                                x: center.x + cos(angle) * scaled,
+                                y: center.y + sin(angle) * scaled
+                            )
 
-                        i == 0 ? path.move(to: point) : path.addLine(to: point)
+                            i == 0 ? path.move(to: point) : path.addLine(to: point)
+                        }
+                        path.closeSubpath()
                     }
-                    path.closeSubpath()
+                    .fill(Color.blue.opacity(0.35))
+
+                    Path { path in
+                        for i in muscles.indices {
+                            let angle = angleFor(index: i, count: muscles.count)
+                            let value = values[muscles[i]] ?? 0
+                            let scaled = CGFloat(value / maxValue) * radius
+
+                            let point = CGPoint(
+                                x: center.x + cos(angle) * scaled,
+                                y: center.y + sin(angle) * scaled
+                            )
+
+                            i == 0 ? path.move(to: point) : path.addLine(to: point)
+                        }
+                        path.closeSubpath()
+                    }
+                    .stroke(Color.blue, lineWidth: 2)
                 }
-                .stroke(Color.blue, lineWidth: 2)
             }
         }
 
@@ -336,6 +372,7 @@ struct AnalyticsView: View {
             CGFloat(Double(index) / Double(count) * 2 * .pi - .pi / 2)
         }
     }
+
 
     // MARK: - Stats Grid
 
@@ -351,21 +388,38 @@ struct AnalyticsView: View {
     }
 
     private func aggregateStats() -> (workouts: Int, sets: Int, volume: Double, duration: String) {
+
+        let relevantSets = sets.filter { set in
+            guard let cutoff = selectedRange.cutoff(calendar: calendar) else { return true }
+            guard set.timestamp >= cutoff else { return false }
+
+            guard let selectedMuscle else { return true }
+
+            guard
+                let exercise = ExerciseLibrary.all.first(where: { $0.name == set.exerciseName })
+            else {
+                return false
+            }
+
+            return exercise.muscleGroup == selectedMuscle
+        }
+
         let relevantWorkouts = workouts.filter {
             guard let cutoff = selectedRange.cutoff(calendar: calendar) else { return true }
             return $0.date >= cutoff
         }
 
-        let relevantSets = sets.filter {
-            guard let cutoff = selectedRange.cutoff(calendar: calendar) else { return true }
-            return $0.timestamp >= cutoff
-        }
-
         let volume = relevantSets.reduce(0) { $0 + ($1.weight * Double($1.reps)) }
-        let duration = "\(relevantWorkouts.count * 60 / 60)h"
+        let duration = "\(relevantWorkouts.count)h"
 
-        return (relevantWorkouts.count, relevantSets.count, volume, duration)
+        return (
+            relevantWorkouts.count,
+            relevantSets.count,
+            volume,
+            duration
+        )
     }
+
 
     // MARK: - Coach
 
