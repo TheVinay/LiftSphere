@@ -22,16 +22,31 @@ struct AnalyticsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
 
-                    muscleDistributionCard
-                    muscleStatsGrid
-                    coachRecommendationCard
-                    undertrainedAlertCard
-                    
+                    //If you want uncollapsed
+                    //muscleDistributionCard
+                    //muscleStatsGrid
+                    //coachRecommendationCard
+                    //undertrainedAlertCard
                     // weeklySummaryCard
-//                    summaryCard
+                    //summaryCard
                     //streaksCard
                     //consistencyCalendarCard
                     //muscleHeatmapCard
+                    
+                    collapsibleSection(
+                        title: "Muscle Distribution & Balance",
+                        initiallyExpanded: true
+                    ) {
+                        VStack(spacing: 16) {
+                            muscleDistributionCard
+                            muscleStatsGrid
+                            coachRecommendationCard
+                            undertrainedAlertCard
+                        }
+                    }
+
+                    
+                    
 
                     
                     CollapsibleSection(
@@ -108,7 +123,82 @@ struct AnalyticsView: View {
     }
 
     
-    
+    private func collapsibleSection<Content: View>(
+        title: String,
+        subtitle: String? = nil,
+        initiallyExpanded: Bool = true,
+        @ViewBuilder content: @escaping () -> Content
+    ) -> some View {
+
+        CollapsibleSectionView(
+            title: title,
+            subtitle: subtitle,
+            initiallyExpanded: initiallyExpanded,
+            content: content
+        )
+    }
+
+    private struct CollapsibleSectionView<Content: View>: View {
+        let title: String
+        let subtitle: String?
+        let initiallyExpanded: Bool
+        let content: () -> Content
+
+        @State private var isExpanded: Bool
+
+        init(
+            title: String,
+            subtitle: String?,
+            initiallyExpanded: Bool,
+            @ViewBuilder content: @escaping () -> Content
+        ) {
+            self.title = title
+            self.subtitle = subtitle
+            self.initiallyExpanded = initiallyExpanded
+            self.content = content
+            _isExpanded = State(initialValue: initiallyExpanded)
+        }
+
+        var body: some View {
+            VStack(spacing: 0) {
+
+                // 👉 THIS is the tappable bar you like
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.headline)
+
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    LinearGradient(
+                        colors: [.blue.opacity(0.18), .purple.opacity(0.14)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        isExpanded.toggle()
+                    }
+                }
+
+                if isExpanded {
+                    content()
+                        .padding()
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+        }
+    }
+
     
     private enum UndertrainingSeverity {
         case mild

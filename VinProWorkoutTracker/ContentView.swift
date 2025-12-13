@@ -151,7 +151,50 @@ struct ContentView: View {
             }
             .opacity(workout.isArchived ? 0.45 : 1.0)
         }
+
+        // 👉 RIGHT SWIPE (Complete / Duplicate / Delete)
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+
+            Button {
+                toggleCompleted(workout)
+            } label: {
+                Label(
+                    workout.isCompleted ? "Undo" : "Complete",
+                    systemImage: workout.isCompleted ? "arrow.uturn.backward" : "checkmark"
+                )
+            }
+            .tint(.green)
+
+            Button {
+                repeatWorkout(workout)
+            } label: {
+                Label("Duplicate", systemImage: "doc.on.doc")
+            }
+            .tint(.blue)
+
+            Button(role: .destructive) {
+                handleDelete(workout)
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
+
+        // 👉 LEFT SWIPE (Archive / Unarchive)
+        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+
+            Button {
+                toggleArchive(workout)
+            } label: {
+                Label(
+                    workout.isArchived ? "Unarchive" : "Archive",
+                    systemImage: workout.isArchived ? "tray.and.arrow.up" : "archivebox"
+                )
+            }
+            .tint(.gray)
+        }
     }
+
+
 
     
     private func handleDelete(_ workout: Workout) {
