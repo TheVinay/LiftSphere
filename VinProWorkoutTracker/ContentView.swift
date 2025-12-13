@@ -10,6 +10,9 @@ struct ContentView: View {
     @AppStorage("showArchivedWorkouts") private var showArchivedWorkouts: Bool = false
     @AppStorage("confirmBeforeDelete") private var confirmBeforeDelete: Bool = true
 
+    @State private var showingNewWorkout = false
+
+    
     // Export / import
     @State private var shareItem: ShareItem?
     @State private var isImporting = false
@@ -100,6 +103,21 @@ struct ContentView: View {
                 }
             }
             .navigationTitle("Workouts")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showingNewWorkout = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .accessibilityLabel("Add Workout")
+                }
+            }
+            .sheet(isPresented: $showingNewWorkout) {
+                NewWorkoutView()
+            }
+
+
             .alert("Delete Workout?",
                    isPresented: Binding(
                     get: { pendingDelete != nil },
