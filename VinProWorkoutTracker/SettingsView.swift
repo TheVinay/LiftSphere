@@ -3,7 +3,6 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
 
-    // Appearance stored using the same key the App reads ("appTheme")
     private enum Appearance: Int, CaseIterable, Identifiable {
         case system = 0
         case light  = 1
@@ -22,13 +21,10 @@ struct SettingsView: View {
 
     // MARK: - AppStorage
 
-    // Theme
     @AppStorage("appTheme") private var theme: Int = Appearance.system.rawValue
-
-    // Archive visibility
     @AppStorage("showArchivedWorkouts") private var showArchivedWorkouts: Bool = false
+    @AppStorage("confirmBeforeDelete") private var confirmBeforeDelete: Bool = true
 
-    // Account-related storage
     @AppStorage("isSignedIn") private var isSignedIn: Bool = false
     @AppStorage("displayName") private var storedDisplayName: String = ""
     @AppStorage("didChooseLogin") private var didChooseLogin: Bool = false
@@ -37,16 +33,14 @@ struct SettingsView: View {
         NavigationStack {
             Form {
 
-                // ---------------------------------------------------
-                // BRANDING HEADER
-                // ---------------------------------------------------
+                // BRANDING
                 Section {
                     HStack(spacing: 16) {
                         ZStack {
-                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            RoundedRectangle(cornerRadius: 20)
                                 .fill(
                                     LinearGradient(
-                                        colors: [Color.blue, Color.purple],
+                                        colors: [.blue, .purple],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
                                     )
@@ -58,7 +52,7 @@ struct SettingsView: View {
                                 .foregroundColor(.white)
                         }
 
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading) {
                             Text("LiftSphere Workout")
                                 .font(.headline)
                             Text("Vin Edition • Designed by Vin")
@@ -68,35 +62,25 @@ struct SettingsView: View {
 
                         Spacer()
                     }
-                    .padding(.vertical, 4)
                 }
 
-                // ---------------------------------------------------
                 // ACCOUNT
-                // ---------------------------------------------------
                 Section("Account") {
                     if isSignedIn {
                         Text("Signed in as \(storedDisplayName)")
-                            .font(.subheadline)
-
-                        Button("Sign out") {
+                        Button("Sign out", role: .destructive) {
                             isSignedIn = false
                             storedDisplayName = ""
                             didChooseLogin = true
                         }
-                        .foregroundColor(.red)
-
                     } else {
                         Button("Sign in with Apple") {
                             didChooseLogin = false
                         }
-                        .foregroundColor(.blue)
                     }
                 }
 
-                // ---------------------------------------------------
                 // APPEARANCE
-                // ---------------------------------------------------
                 Section("Appearance") {
                     Picker("Theme", selection: $theme) {
                         ForEach(Appearance.allCases) { style in
@@ -106,35 +90,22 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
                 }
 
-                // ---------------------------------------------------
-                // WORKOUT LIST
-                // ---------------------------------------------------
+                // WORKOUTS
                 Section("Workouts") {
                     Toggle("Show Archived Workouts", isOn: $showArchivedWorkouts)
+                    Toggle("Confirm Before Delete", isOn: $confirmBeforeDelete)
                 }
 
-                // ---------------------------------------------------
                 // APP INFO
-                // ---------------------------------------------------
                 Section("App") {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("LiftSphere Workout – Vin Edition")
-                            .font(.headline)
-                        Text("Designed by Vin")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Text(
-                        "A back-friendly, customizable workout tracker for push, pull, legs, Amariss templates, and more, with simple logging and charts."
-                    )
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 4)
+                    Text("LiftSphere Workout – Vin Edition")
+                        .font(.headline)
+                    Text("Back-friendly workout tracking with analytics.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
             }
             .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
