@@ -6,21 +6,33 @@ struct ContentView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Workout.date, order: .reverse) private var workouts: [Workout]
 
+    // Settings
+    @AppStorage("showArchivedWorkouts") private var showArchivedWorkouts: Bool = false
+
     // Export / import state
     @State private var shareItem: ShareItem?
     @State private var isImporting = false
     @State private var importError: String?
 
+    // Filtered list
+    private var visibleWorkouts: [Workout] {
+        showArchivedWorkouts
+            ? workouts
+            : workouts.filter { !$0.isArchived }
+    }
+
     var body: some View {
         NavigationStack {
             Group {
-                if workouts.isEmpty {
-                    Text("No workouts yet")
+                if visibleWorkouts.isEmpty {
+                    Text(showArchivedWorkouts
+                         ? "No workouts"
+                         : "No active workouts")
                         .foregroundStyle(.secondary)
                         .padding()
                 } else {
                     List {
-                        ForEach(workouts) { workout in
+                        ForEach(visibleWorkouts) { workout in
                             NavigationLink {
                                 WorkoutDetailView(workout: workout)
                             } label: {
@@ -29,9 +41,14 @@ struct ContentView: View {
                                         Text(workout.name)
                                             .font(.headline)
 
-                                        Text(workout.date.formatted(date: .abbreviated, time: .shortened))
-                                            .font(.subheadline)
-                                            .foregroundStyle(.secondary)
+                                        Text(
+                                            workout.date.formatted(
+                                                date: .abbreviated,
+                                                time: .shortened
+                                            )
+                                        )
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
 
                                         Text("Volume: \(Int(workout.totalVolume))")
                                             .font(.caption)
@@ -40,14 +57,13 @@ struct ContentView: View {
 
                                     Spacer()
 
-                                    // ✅ Completed indicator
                                     if workout.isCompleted {
                                         Image(systemName: "checkmark.circle.fill")
                                             .foregroundColor(.green)
                                             .imageScale(.large)
                                     }
                                 }
-                                .opacity(workout.isCompleted ? 0.6 : 1.0)
+                                .opacity(workout.isArchived ? 0.45 : 1.0)
                             }
 
                             // MARK: - Swipe RIGHT → LEFT (Primary)
@@ -59,7 +75,9 @@ struct ContentView: View {
                                 } label: {
                                     Label(
                                         workout.isCompleted ? "Undo" : "Complete",
-                                        systemImage: workout.isCompleted ? "arrow.uturn.backward" : "checkmark"
+                                        systemImage: workout.isCompleted
+                                            ? "arrow.uturn.backward"
+                                            : "checkmark"
                                     )
                                 }
                                 .tint(.green)
@@ -83,6 +101,7 @@ struct ContentView: View {
                             // MARK: - Swipe LEFT → RIGHT (Secondary)
                             .swipeActions(edge: .leading, allowsFullSwipe: false) {
 
+                                // Share
                                 Button {
                                     shareSingleWorkout(workout)
                                 } label: {
@@ -90,10 +109,16 @@ struct ContentView: View {
                                 }
                                 .tint(.green)
 
+                                // Archive / Unarchive
                                 Button {
-                                    // Archive placeholder (later)
+                                    toggleArchive(workout)
                                 } label: {
-                                    Label("Archive", systemImage: "archivebox")
+                                    Label(
+                                        workout.isArchived ? "Unarchive" : "Archive",
+                                        systemImage: workout.isArchived
+                                            ? "tray.and.arrow.up"
+                                            : "archivebox"
+                                    )
                                 }
                                 .tint(.gray)
                             }
@@ -151,6 +176,11 @@ struct ContentView: View {
         try? context.save()
     }
 
+    private func toggleArchive(_ workout: Workout) {
+        workout.isArchived.toggle()
+        try? context.save()
+    }
+
     private func deleteWorkout(_ workout: Workout) {
         context.delete(workout)
         try? context.save()
@@ -172,7 +202,7 @@ struct ContentView: View {
         try? context.save()
     }
 
-    // MARK: - Share (single workout)
+    // MARK: - Share (single)
 
     private func shareSingleWorkout(_ workout: Workout) {
         do {
@@ -185,11 +215,16 @@ struct ContentView: View {
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             let data = try encoder.encode(export)
 
-            let filename = "Workout-\(workout.name)-\(Int(Date().timeIntervalSince1970)).json"
-            let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
-            try data.write(to: url, options: .atomic)
+            let filename =
+                "Workout-\(workout.name)-\(Int(Date().timeIntervalSince1970)).json"
 
+            let url =
+                FileManager.default.temporaryDirectory
+                    .appendingPathComponent(filename)
+
+            try data.write(to: url, options: .atomic)
             shareItem = ShareItem(url: url)
+
         } catch {
             importError = "Failed to share workout: \(error.localizedDescription)"
         }
@@ -208,11 +243,16 @@ struct ContentView: View {
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             let data = try encoder.encode(export)
 
-            let filename = "WorkoutExport-\(Int(Date().timeIntervalSince1970)).json"
-            let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
-            try data.write(to: url, options: .atomic)
+            let filename =
+                "WorkoutExport-\(Int(Date().timeIntervalSince1970)).json"
 
+            let url =
+                FileManager.default.temporaryDirectory
+                    .appendingPathComponent(filename)
+
+            try data.write(to: url, options: .atomic)
             shareItem = ShareItem(url: url)
+
         } catch {
             importError = "Failed to export workouts: \(error.localizedDescription)"
         }
@@ -225,7 +265,8 @@ struct ContentView: View {
             let url = try result.get()
             let data = try Data(contentsOf: url)
             let decoder = JSONDecoder()
-            let imported = try decoder.decode(WorkoutExportFile.self, from: data)
+            let imported =
+                try decoder.decode(WorkoutExportFile.self, from: data)
 
             for w in imported.workouts {
                 let newWorkout = Workout(
@@ -255,75 +296,9 @@ struct ContentView: View {
             }
 
             try context.save()
+
         } catch {
             importError = "Failed to import workouts: \(error.localizedDescription)"
         }
     }
-}
-
-// MARK: - Export models
-
-struct WorkoutExportFile: Codable {
-    let exportedAt: Date
-    let workouts: [ExportedWorkout]
-}
-
-struct ExportedWorkout: Codable {
-    let date: Date
-    let name: String
-    let warmupMinutes: Int
-    let coreMinutes: Int
-    let stretchMinutes: Int
-    let mainExercises: [String]
-    let coreExercises: [String]
-    let stretches: [String]
-    let sets: [ExportedSet]
-
-    init(from workout: Workout) {
-        date = workout.date
-        name = workout.name
-        warmupMinutes = workout.warmupMinutes
-        coreMinutes = workout.coreMinutes
-        stretchMinutes = workout.stretchMinutes
-        mainExercises = workout.mainExercises
-        coreExercises = workout.coreExercises
-        stretches = workout.stretches
-        sets = workout.sets.map {
-            ExportedSet(
-                exerciseName: $0.exerciseName,
-                weight: $0.weight,
-                reps: $0.reps,
-                timestamp: $0.timestamp
-            )
-        }
-    }
-}
-
-struct ExportedSet: Codable {
-    let exerciseName: String
-    let weight: Double
-    let reps: Int
-    let timestamp: Date
-}
-
-// MARK: - Share helpers
-
-struct ShareItem: Identifiable {
-    let id = UUID()
-    let url: URL
-}
-
-struct ActivityView: UIViewControllerRepresentable {
-    let activityItems: [Any]
-
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
-    }
-
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
-}
-
-#Preview {
-    ContentView()
-        .modelContainer(for: [Workout.self, SetEntry.self], inMemory: true)
 }

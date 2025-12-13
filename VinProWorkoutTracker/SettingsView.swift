@@ -20,8 +20,13 @@ struct SettingsView: View {
         }
     }
 
-    // IMPORTANT: Same key and type as in VinProWorkoutTrackerApp
+    // MARK: - AppStorage
+
+    // Theme
     @AppStorage("appTheme") private var theme: Int = Appearance.system.rawValue
+
+    // Archive visibility
+    @AppStorage("showArchivedWorkouts") private var showArchivedWorkouts: Bool = false
 
     // Account-related storage
     @AppStorage("isSignedIn") private var isSignedIn: Bool = false
@@ -77,13 +82,12 @@ struct SettingsView: View {
                         Button("Sign out") {
                             isSignedIn = false
                             storedDisplayName = ""
-                            didChooseLogin = true   // stay in app but signed-out
+                            didChooseLogin = true
                         }
                         .foregroundColor(.red)
 
                     } else {
                         Button("Sign in with Apple") {
-                            // Send user back to WelcomeView
                             didChooseLogin = false
                         }
                         .foregroundColor(.blue)
@@ -103,6 +107,13 @@ struct SettingsView: View {
                 }
 
                 // ---------------------------------------------------
+                // WORKOUT LIST
+                // ---------------------------------------------------
+                Section("Workouts") {
+                    Toggle("Show Archived Workouts", isOn: $showArchivedWorkouts)
+                }
+
+                // ---------------------------------------------------
                 // APP INFO
                 // ---------------------------------------------------
                 Section("App") {
@@ -114,10 +125,12 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    Text("A back-friendly, customizable workout tracker for push, pull, legs, Amariss templates, and more, with simple logging and charts.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 4)
+                    Text(
+                        "A back-friendly, customizable workout tracker for push, pull, legs, Amariss templates, and more, with simple logging and charts."
+                    )
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 4)
                 }
             }
             .navigationTitle("Settings")

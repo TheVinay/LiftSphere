@@ -10,6 +10,7 @@
 		8490D07A2EEA419200351B1C /* AppleSignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8490D0792EEA419200351B1C /* AppleSignInView.swift */; };
 		8490D07C2EEA41B600351B1C /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8490D07B2EEA41B600351B1C /* RootView.swift */; };
 		8490D07E2EEA464400351B1C /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8490D07D2EEA464400351B1C /* WelcomeView.swift */; };
+		8490D0E62EECE3DC00351B1C /* WorkoutExportSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8490D0E52EECE3DC00351B1C /* WorkoutExportSupport.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,6 +37,7 @@
 		8490D0792EEA419200351B1C /* AppleSignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInView.swift; sourceTree = "<group>"; };
 		8490D07B2EEA41B600351B1C /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		8490D07D2EEA464400351B1C /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
+		8490D0E52EECE3DC00351B1C /* WorkoutExportSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutExportSupport.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -84,6 +86,7 @@
 		842446C62EE15B790018DAA6 = {
 			isa = PBXGroup;
 			children = (
+				8490D0E52EECE3DC00351B1C /* WorkoutExportSupport.swift */,
 				8490D07D2EEA464400351B1C /* WelcomeView.swift */,
 				8490D07B2EEA41B600351B1C /* RootView.swift */,
 				8490D0792EEA419200351B1C /* AppleSignInView.swift */,
@@ -249,6 +252,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8490D07C2EEA41B600351B1C /* RootView.swift in Sources */,
+				8490D0E62EECE3DC00351B1C /* WorkoutExportSupport.swift in Sources */,
 				8490D07A2EEA419200351B1C /* AppleSignInView.swift in Sources */,
 				8490D07E2EEA464400351B1C /* WelcomeView.swift in Sources */,
 			);
