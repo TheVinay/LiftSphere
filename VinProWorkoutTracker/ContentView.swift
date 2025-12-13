@@ -6,6 +6,9 @@ struct ContentView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Workout.date, order: .reverse) private var workouts: [Workout]
 
+    private let calendar = Calendar.current
+
+    
     // Settings
     @AppStorage("showArchivedWorkouts") private var showArchivedWorkouts: Bool = false
     @AppStorage("confirmBeforeDelete") private var confirmBeforeDelete: Bool = true
@@ -28,77 +31,46 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             List {
-                ForEach(visibleWorkouts) { workout in
-                    NavigationLink {
-                        WorkoutDetailView(workout: workout)
-                    } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(workout.name).font(.headline)
-                                Text(workout.date.formatted(date: .abbreviated, time: .shortened))
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                Text("Volume: \(Int(workout.totalVolume))")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
 
-                            Spacer()
+                // THIS WEEK
+                let thisWeek = visibleWorkouts.filter {
+                    calendar.isDate($0.date, equalTo: Date(), toGranularity: .weekOfYear)
+                }
 
-                            if workout.isCompleted {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(.green)
-                            }
-                        }
-                        .opacity(workout.isArchived ? 0.45 : 1.0)
-                    }
-
-                    // TRAILING
-                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-
-                        Button {
-                            toggleCompleted(workout)
-                        } label: {
-                            Label(
-                                workout.isCompleted ? "Undo" : "Complete",
-                                systemImage: workout.isCompleted ? "arrow.uturn.backward" : "checkmark"
-                            )
-                        }
-                        .tint(.green)
-
-                        Button {
-                            repeatWorkout(workout)
-                        } label: {
-                            Label("Duplicate", systemImage: "doc.on.doc")
-                        }
-                        .tint(.blue)
-
-                        Button(role: .destructive) {
-                            handleDelete(workout)
-                        } label: {
-                            Label("Delete", systemImage: "trash")
+                if !thisWeek.isEmpty {
+                    Section("This Week") {
+                        ForEach(thisWeek) { workout in
+                            workoutRow(workout)
                         }
                     }
+                }
 
-                    // LEADING
-                    .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                // LAST WEEK
+                let lastWeek = visibleWorkouts.filter {
+                    guard let lastWeekDate = calendar.date(byAdding: .weekOfYear, value: -1, to: Date()) else {
+                        return false
+                    }
+                    return calendar.isDate($0.date, equalTo: lastWeekDate, toGranularity: .weekOfYear)
+                }
 
-                        Button {
-                            shareSingleWorkout(workout)
-                        } label: {
-                            Label("Share", systemImage: "square.and.arrow.up")
+                if !lastWeek.isEmpty {
+                    Section("Last Week") {
+                        ForEach(lastWeek) { workout in
+                            workoutRow(workout)
                         }
-                        .tint(.green)
+                    }
+                }
 
-                        Button {
-                            toggleArchive(workout)
-                        } label: {
-                            Label(
-                                workout.isArchived ? "Unarchive" : "Archive",
-                                systemImage: workout.isArchived ? "tray.and.arrow.up" : "archivebox"
-                            )
+                // EARLIER
+                let earlier = visibleWorkouts.filter {
+                    !thisWeek.contains($0) && !lastWeek.contains($0)
+                }
+
+                if !earlier.isEmpty {
+                    Section("Earlier") {
+                        ForEach(earlier) { workout in
+                            workoutRow(workout)
                         }
-                        .tint(.gray)
                     }
                 }
             }
@@ -142,6 +114,46 @@ struct ContentView: View {
 
     // MARK: - Helpers
 
+    @ViewBuilder
+    private func workoutRow(_ workout: Workout) -> some View {
+        NavigationLink {
+            WorkoutDetailView(workout: workout)
+        } label: {
+            HStack(alignment: .top) {
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(workout.name)
+                        .font(.headline)
+
+                    Text(workout.date.formatted(date: .abbreviated, time: .omitted))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                    if workout.totalVolume > 0 {
+                        Text("Volume \(Int(workout.totalVolume))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer()
+
+                if workout.isCompleted {
+                    Text("✓")
+                        .font(.caption2.bold())
+                        .padding(6)
+                        .background(
+                            Capsule()
+                                .fill(Color.green.opacity(0.15))
+                        )
+                        .foregroundColor(.green)
+                }
+            }
+            .opacity(workout.isArchived ? 0.45 : 1.0)
+        }
+    }
+
+    
     private func handleDelete(_ workout: Workout) {
         if confirmBeforeDelete {
             pendingDelete = workout

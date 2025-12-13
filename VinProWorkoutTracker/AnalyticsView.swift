@@ -22,23 +22,55 @@ struct AnalyticsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
 
-                    weeklySummaryCard
-                    summaryCard
-                    streaksCard
                     muscleDistributionCard
                     muscleStatsGrid
                     coachRecommendationCard
                     undertrainedAlertCard
-                    consistencyCalendarCard
-                    muscleHeatmapCard
+                    
+                    // weeklySummaryCard
+//                    summaryCard
+                    //streaksCard
+                    //consistencyCalendarCard
+                    //muscleHeatmapCard
+
+                    
+                    CollapsibleSection(
+                        title: "Weekly Summary",
+                        subtitle: "This week vs last week"
+                    ) {
+                        weeklySummaryCard
+                    }
+
+                    CollapsibleSection(title: "Consistency") {
+                        consistencyCalendarCard
+                    }
+
+                    CollapsibleSection(title: "Muscle Activation") {
+                        muscleHeatmapCard
+                    }
 
                     if !workouts.isEmpty {
-                        volumeOverTimeCard
+                        CollapsibleSection(title: "Volume Over Time") {
+                            volumeOverTimeCard
+                        }
                     }
 
                     if !sets.isEmpty {
-                        topExercisesCard
+                        CollapsibleSection(title: "Top Exercises") {
+                            topExercisesCard
+                        }
                     }
+
+                
+                    
+        
+                    //if !workouts.isEmpty {
+                    //    volumeOverTimeCard
+                    //}
+
+                    //if !sets.isEmpty {
+                    //    topExercisesCard
+                    //}
                 }
                 .padding()
             }
@@ -76,6 +108,8 @@ struct AnalyticsView: View {
     }
 
     
+    
+    
     private enum UndertrainingSeverity {
         case mild
         case moderate
@@ -98,6 +132,8 @@ struct AnalyticsView: View {
         }
     }
 
+    
+    
     private func severity(
         for muscle: MuscleGroup,
         values: [MuscleGroup: Double]
@@ -138,6 +174,8 @@ struct AnalyticsView: View {
             }
         }
     }
+    
+    
     
     private func undertrainedMuscles(
         thresholdRatio: Double = 0.6
@@ -854,3 +892,58 @@ struct AnalyticsView: View {
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 }
+
+private struct CollapsibleSection<Content: View>: View {
+    let title: String
+    let subtitle: String?
+    @State private var expanded = false
+    let content: Content
+
+    init(
+        title: String,
+        subtitle: String? = nil,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                withAnimation(.easeInOut) {
+                    expanded.toggle()
+                }
+            } label: {
+                HStack {
+                    VStack(alignment: .leading) {
+                        Text(title).font(.headline)
+                        if let subtitle {
+                            Text(subtitle)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer()
+                    Image(systemName: expanded ? "chevron.up" : "chevron.down")
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if expanded {
+                content
+            }
+        }
+        .padding()
+        .background(
+            LinearGradient(
+                colors: [.blue.opacity(0.18), .purple.opacity(0.14)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+}
+
