@@ -23,13 +23,14 @@ struct AnalyticsView: View {
                 VStack(alignment: .leading, spacing: 22) {
 
                     weeklySummaryCard
+                    summaryCard
                     streaksCard
-                    consistencyCalendarCard
-                    muscleHeatmapCard
                     muscleDistributionCard
                     muscleStatsGrid
+                    undertrainedAlertCard
+                    consistencyCalendarCard
+                    muscleHeatmapCard
                     coachRecommendationCard
-                    summaryCard
 
                     if !workouts.isEmpty {
                         volumeOverTimeCard
@@ -96,6 +97,25 @@ struct AnalyticsView: View {
             }
         }
     }
+    
+    private func undertrainedMuscles(
+        thresholdRatio: Double = 0.6
+    ) -> [MuscleGroup] {
+
+        let values = distributionValues()
+        guard !values.isEmpty else { return [] }
+
+        let total = values.values.reduce(0, +)
+        guard total > 0 else { return [] }
+
+        let average = total / Double(MuscleGroup.allCases.count)
+
+        return MuscleGroup.allCases.filter { muscle in
+            let value = values[muscle] ?? 0
+            return value < average * thresholdRatio
+        }
+    }
+
 
     private struct WeekStats {
         let workouts: Int
@@ -277,7 +297,42 @@ struct AnalyticsView: View {
         }
     }
     
-    
+    private var undertrainedAlertCard: some View {
+        let undertrained = undertrainedMuscles()
+
+        return Group {
+            if !undertrained.isEmpty {
+                analyticsCard(
+                    title: "Undertrained Muscles",
+                    subtitle: "Based on recent \(selectedMetric.rawValue.lowercased())"
+                ) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(undertrained) { muscle in
+                            HStack {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundColor(.orange)
+
+                                Text(muscle.displayName)
+                                    .font(.body)
+
+                                Spacer()
+
+                                Text("Low")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.vertical, 4)
+                            .onTapGesture {
+                                selectedMuscle = muscle
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
     
     private func nearestMuscle(from size: CGSize, muscles: [MuscleGroup]) -> MuscleGroup? {
         let center = CGPoint(x: size.width / 2, y: size.height / 2)
