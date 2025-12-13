@@ -27,10 +27,10 @@ struct AnalyticsView: View {
                     streaksCard
                     muscleDistributionCard
                     muscleStatsGrid
+                    coachRecommendationCard
                     undertrainedAlertCard
                     consistencyCalendarCard
                     muscleHeatmapCard
-                    coachRecommendationCard
 
                     if !workouts.isEmpty {
                         volumeOverTimeCard
@@ -75,6 +75,47 @@ struct AnalyticsView: View {
         var id: String { rawValue }
     }
 
+    
+    private enum UndertrainingSeverity {
+        case mild
+        case moderate
+        case severe
+
+        var color: Color {
+            switch self {
+            case .mild: return .yellow
+            case .moderate: return .orange
+            case .severe: return .red
+            }
+        }
+
+        var label: String {
+            switch self {
+            case .mild: return "Low"
+            case .moderate: return "Very Low"
+            case .severe: return "Critical"
+            }
+        }
+    }
+
+    private func severity(
+        for muscle: MuscleGroup,
+        values: [MuscleGroup: Double]
+    ) -> UndertrainingSeverity {
+
+        let total = values.values.reduce(0, +)
+        let average = total / Double(MuscleGroup.allCases.count)
+        let value = values[muscle] ?? 0
+        let ratio = average == 0 ? 0 : value / average
+
+        switch ratio {
+        case ..<0.4: return .severe
+        case ..<0.6: return .moderate
+        default:     return .mild
+        }
+    }
+
+    
     // MARK: - Weekly Summary
 
     private var weeklySummaryCard: some View {
@@ -307,25 +348,30 @@ struct AnalyticsView: View {
                     subtitle: "Based on recent \(selectedMetric.rawValue.lowercased())"
                 ) {
                     VStack(alignment: .leading, spacing: 8) {
+                        let values = distributionValues()
+
                         ForEach(undertrained) { muscle in
+                            let severity = severity(for: muscle, values: values)
+
                             HStack {
                                 Image(systemName: "exclamationmark.triangle.fill")
-                                    .foregroundColor(.orange)
+                                    .foregroundColor(severity.color)
 
                                 Text(muscle.displayName)
                                     .font(.body)
 
                                 Spacer()
 
-                                Text("Low")
+                                Text(severity.label)
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(severity.color)
                             }
                             .padding(.vertical, 4)
                             .onTapGesture {
                                 selectedMuscle = muscle
                             }
                         }
+
                     }
                 }
             }
@@ -333,6 +379,54 @@ struct AnalyticsView: View {
     }
 
 
+    private func balanceScore() -> Int {
+        let values = distributionValues()
+        guard !values.isEmpty else { return 100 }
+
+        let total = values.values.reduce(0, +)
+        let avg = total / Double(MuscleGroup.allCases.count)
+        guard avg > 0 else { return 100 }
+
+        let deviation = values.values.reduce(0) { sum, value in
+            sum + abs(value - avg) / avg
+        } / Double(MuscleGroup.allCases.count)
+
+        return max(0, Int(100 - deviation * 100))
+    }
+
+    private func mostUndertrainedMuscle() -> MuscleGroup? {
+        let values = distributionValues()
+        guard !values.isEmpty else { return nil }
+
+        let total = values.values.reduce(0, +)
+        let avg = total / Double(MuscleGroup.allCases.count)
+
+        return values
+            .min { ($0.value / avg) < ($1.value / avg) }?
+            .key
+    }
+
+    private func coachMessage() -> String {
+        let score = balanceScore()
+
+        guard let muscle = mostUndertrainedMuscle() else {
+            return "Your training looks well balanced. Keep up the consistent work."
+        }
+
+        if score >= 85 {
+            return "Your muscle group balance score is \(score)%. Training is well distributed across muscle groups. Keep maintaining this balance."
+        }
+
+        let metricText = selectedMetric == .volume ? "training volume" : "set count"
+
+        return """
+        Your muscle group balance score is \(score)%.
+        Increasing \(muscle.displayName.lowercased()) \(metricText) will help improve overall balance.
+        """
+    }
+
+    
+    
     
     private func nearestMuscle(from size: CGSize, muscles: [MuscleGroup]) -> MuscleGroup? {
         let center = CGPoint(x: size.width / 2, y: size.height / 2)
@@ -667,9 +761,11 @@ struct AnalyticsView: View {
 
     private var coachRecommendationCard: some View {
         analyticsCard(title: "Coach Vin Suggests") {
-            Text("💪 Keep building momentum. You’re on a solid path.")
+            Text(coachMessage())
+                .font(.body)
         }
     }
+
 
     // MARK: - Overview / Charts
 
