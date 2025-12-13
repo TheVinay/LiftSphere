@@ -362,55 +362,93 @@ struct AnalyticsView: View {
                             }
                     }
 
-                    Path { path in
-                        for i in muscles.indices {
-                            let angle = angleFor(index: i, count: muscles.count)
-                            let value = values[muscles[i]] ?? 0
-                            let scaled = CGFloat(value / maxValue) * radius
+                    
+                    
+                    ForEach(muscles.indices, id: \.self) { i in
+                        let muscle = muscles[i]
 
-                            let point = CGPoint(
-                                x: center.x + cos(angle) * scaled,
-                                y: center.y + sin(angle) * scaled
-                            )
+                        let angle = angleFor(index: i, count: muscles.count)
+                        let nextAngle = angleFor(index: (i + 1) % muscles.count, count: muscles.count)
 
-                            i == 0 ? path.move(to: point) : path.addLine(to: point)
-                        }
-                        path.closeSubpath()
-                    }
-                    .fill(Color.blue.opacity(0.35))
-                    .contentShape(Rectangle())
-                    .gesture(
-                        DragGesture(minimumDistance: 0)
-                            .onEnded { value in
-                                let muscle = nearestMuscle(
-                                    tap: value.location,
-                                    size: geo.size,
-                                    muscles: muscles
+                        let value = values[muscle] ?? 0
+                        let nextValue = values[muscles[(i + 1) % muscles.count]] ?? 0
+
+                        let scaled = CGFloat(value / maxValue) * radius
+                        let nextScaled = CGFloat(nextValue / maxValue) * radius
+
+                        Path { path in
+                            path.move(to: center)
+                            path.addLine(
+                                to: CGPoint(
+                                    x: center.x + cos(angle) * scaled,
+                                    y: center.y + sin(angle) * scaled
                                 )
-
-                                selectedMuscle =
-                                    (selectedMuscle == muscle) ? nil : muscle
-                            }
-                    )
-
-
-
-                    Path { path in
-                        for i in muscles.indices {
-                            let angle = angleFor(index: i, count: muscles.count)
-                            let value = values[muscles[i]] ?? 0
-                            let scaled = CGFloat(value / maxValue) * radius
-
-                            let point = CGPoint(
-                                x: center.x + cos(angle) * scaled,
-                                y: center.y + sin(angle) * scaled
                             )
-
-                            i == 0 ? path.move(to: point) : path.addLine(to: point)
+                            path.addLine(
+                                to: CGPoint(
+                                    x: center.x + cos(nextAngle) * nextScaled,
+                                    y: center.y + sin(nextAngle) * nextScaled
+                                )
+                            )
+                            path.closeSubpath()
                         }
-                        path.closeSubpath()
+                        .fill(
+                            Color.blue.opacity(
+                                selectedMuscle == nil || selectedMuscle == muscle ? 0.45 : 0.12
+                            )
+                        )
+                        .overlay(
+                            Path { path in
+                                path.move(to: center)
+                                path.addLine(
+                                    to: CGPoint(
+                                        x: center.x + cos(angle) * scaled,
+                                        y: center.y + sin(angle) * scaled
+                                    )
+                                )
+                                path.addLine(
+                                    to: CGPoint(
+                                        x: center.x + cos(nextAngle) * nextScaled,
+                                        y: center.y + sin(nextAngle) * nextScaled
+                                    )
+                                )
+                                path.closeSubpath()
+                            }
+                            .stroke(Color.blue, lineWidth: 1.5)
+                        )
+                        .animation(.easeInOut(duration: 0.25), value: selectedMuscle)
+                        .contentShape(Path { path in
+                            path.move(to: center)
+                            path.addLine(
+                                to: CGPoint(
+                                    x: center.x + cos(angle) * radius,
+                                    y: center.y + sin(angle) * radius
+                                )
+                            )
+                            path.addLine(
+                                to: CGPoint(
+                                    x: center.x + cos(nextAngle) * radius,
+                                    y: center.y + sin(nextAngle) * radius
+                                )
+                            )
+                            path.closeSubpath()
+                        })
+                        .gesture(
+                            DragGesture(minimumDistance: 0)
+                                .onEnded { value in
+                                    selectedMuscle =
+                                        (selectedMuscle == muscle) ? nil : muscle
+                                }
+                        )
                     }
-                    .stroke(Color.blue, lineWidth: 2)
+
+                    
+                    
+                    
+
+
+
+                    
                 }
             }
         }
