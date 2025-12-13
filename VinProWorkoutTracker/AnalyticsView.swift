@@ -10,6 +10,10 @@ struct AnalyticsView: View {
 
     private let calendar = Calendar.current
 
+    // MARK: - Controls
+    @State private var selectedRange: TimeRange = .days30
+    @State private var selectedMetric: MetricType = .volume
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -19,11 +23,18 @@ struct AnalyticsView: View {
                     streaksCard
                     consistencyCalendarCard
                     muscleHeatmapCard
+                    muscleDistributionCard
+                    muscleStatsGrid
                     coachRecommendationCard
-
                     summaryCard
-                    if !workouts.isEmpty { volumeOverTimeCard }
-                    if !sets.isEmpty { topExercisesCard }
+
+                    if !workouts.isEmpty {
+                        volumeOverTimeCard
+                    }
+
+                    if !sets.isEmpty {
+                        topExercisesCard
+                    }
                 }
                 .padding()
             }
@@ -32,36 +43,48 @@ struct AnalyticsView: View {
         }
     }
 
-    // ----------------------------------------------------------------------
-    // MARK: - WEEKLY SUMMARY (NEW)
-    // ----------------------------------------------------------------------
+    // MARK: - Time Range / Metric
+
+    enum TimeRange: String, CaseIterable, Identifiable {
+        case days30 = "Last 30 days"
+        case days90 = "Last 90 days"
+        case all = "All time"
+        var id: String { rawValue }
+
+        func cutoff(calendar: Calendar) -> Date? {
+            switch self {
+            case .days30: return calendar.date(byAdding: .day, value: -30, to: Date())
+            case .days90: return calendar.date(byAdding: .day, value: -90, to: Date())
+            case .all: return nil
+            }
+        }
+    }
+
+    enum MetricType: String, CaseIterable, Identifiable {
+        case volume = "Volume"
+        case sets = "Sets"
+        var id: String { rawValue }
+    }
+
+    // MARK: - Weekly Summary
 
     private var weeklySummaryCard: some View {
         let thisWeek = weekStats(offset: 0)
         let lastWeek = weekStats(offset: -1)
 
-        let volumeDeltaPct: String = {
+        let delta: String = {
             guard lastWeek.volume > 0 else { return "–" }
-            let delta = (thisWeek.volume - lastWeek.volume) / lastWeek.volume * 100
-            return String(format: "%+.0f%%", delta)
+            let pct = (thisWeek.volume - lastWeek.volume) / lastWeek.volume * 100
+            return String(format: "%+.0f%%", pct)
         }()
 
-        return analyticsCard(title: "Weekly Summary",
-                             subtitle: "This week vs last week") {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    statBox("Workouts", "\(thisWeek.workouts)")
-                    Spacer()
-                    statBox("Volume", "\(Int(thisWeek.volume))")
-                    Spacer()
-                    statBox("Δ Volume", volumeDeltaPct)
-                }
-
-                if let muscle = thisWeek.topMuscle {
-                    Text("Focus muscle: \(muscle.displayName)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+        return analyticsCard(title: "Weekly Summary", subtitle: "This week vs last week") {
+            HStack {
+                statBox("Workouts", "\(thisWeek.workouts)")
+                Spacer()
+                statBox("Volume", "\(Int(thisWeek.volume))")
+                Spacer()
+                statBox("Δ Volume", delta)
             }
         }
     }
@@ -69,46 +92,25 @@ struct AnalyticsView: View {
     private struct WeekStats {
         let workouts: Int
         let volume: Double
-        let topMuscle: MuscleGroup?
     }
 
     private func weekStats(offset: Int) -> WeekStats {
-        let startOfWeek = calendar.date(
+        let start = calendar.date(
             from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear],
             from: calendar.date(byAdding: .weekOfYear, value: offset, to: Date())!)
         )!
 
-        let endOfWeek = calendar.date(byAdding: .day, value: 7, to: startOfWeek)!
+        let end = calendar.date(byAdding: .day, value: 7, to: start)!
 
-        let weekWorkouts = workouts.filter {
-            $0.date >= startOfWeek && $0.date < endOfWeek
-        }
+        let weekWorkouts = workouts.filter { $0.date >= start && $0.date < end }
+        let weekSets = sets.filter { $0.timestamp >= start && $0.timestamp < end }
 
-        let weekSets = sets.filter {
-            $0.timestamp >= startOfWeek && $0.timestamp < endOfWeek
-        }
+        let volume = weekSets.reduce(0) { $0 + ($1.weight * Double($1.reps)) }
 
-        var muscleVolume: [MuscleGroup: Double] = [:]
-
-        for set in weekSets {
-            if let template = ExerciseLibrary.all.first(where: { $0.name == set.exerciseName }) {
-                muscleVolume[template.muscleGroup, default: 0] += set.weight * Double(set.reps)
-            }
-        }
-
-        let topMuscle = muscleVolume.max(by: { $0.value < $1.value })?.key
-        let totalVolume = weekSets.reduce(0) { $0 + ($1.weight * Double($1.reps)) }
-
-        return WeekStats(
-            workouts: weekWorkouts.count,
-            volume: totalVolume,
-            topMuscle: topMuscle
-        )
+        return WeekStats(workouts: weekWorkouts.count, volume: volume)
     }
 
-    // ----------------------------------------------------------------------
-    // MARK: - STREAKS
-    // ----------------------------------------------------------------------
+    // MARK: - Streaks
 
     private var streaksCard: some View {
         analyticsCard(title: "Streaks & Activity") {
@@ -128,7 +130,8 @@ struct AnalyticsView: View {
 
         var streak = 1
         for i in 1..<sorted.count {
-            let gap = calendar.dateComponents([.day],
+            let gap = calendar.dateComponents(
+                [.day],
                 from: calendar.startOfDay(for: sorted[i].date),
                 to: calendar.startOfDay(for: sorted[i - 1].date)
             ).day ?? 99
@@ -146,7 +149,8 @@ struct AnalyticsView: View {
         var current = 1
 
         for i in 1..<sorted.count {
-            let gap = calendar.dateComponents([.day],
+            let gap = calendar.dateComponents(
+                [.day],
                 from: calendar.startOfDay(for: sorted[i].date),
                 to: calendar.startOfDay(for: sorted[i - 1].date)
             ).day ?? 99
@@ -167,21 +171,17 @@ struct AnalyticsView: View {
         }.count
     }
 
-    // ----------------------------------------------------------------------
-    // MARK: - CONSISTENCY CALENDAR
-    // ----------------------------------------------------------------------
+    // MARK: - Consistency
 
     private var consistencyCalendarCard: some View {
         analyticsCard(title: "Consistency (Last 28 Days)") {
             let days = last28Days()
-            let activeDays = Set(workouts.map { calendar.startOfDay(for: $0.date) })
+            let active = Set(workouts.map { calendar.startOfDay(for: $0.date) })
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7)) {
                 ForEach(days, id: \.self) { day in
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(activeDays.contains(day)
-                              ? Color.green.opacity(0.85)
-                              : Color.gray.opacity(0.2))
+                        .fill(active.contains(day) ? .green : .gray.opacity(0.2))
                         .frame(width: 22, height: 22)
                 }
             }
@@ -195,19 +195,17 @@ struct AnalyticsView: View {
         }.reversed()
     }
 
-    // ----------------------------------------------------------------------
-    // MARK: - MUSCLE HEATMAP
-    // ----------------------------------------------------------------------
+    // MARK: - Muscle Heatmap
 
     private var muscleHeatmapCard: some View {
         analyticsCard(title: "Muscle Activation (30 Days)") {
-            let volumes = muscleVolumesLast30Days()
+            let volumes = muscleVolumes(days: 30)
             let maxVal = volumes.values.max() ?? 1
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3)) {
                 ForEach(MuscleGroup.allCases) { group in
-                    let value = volumes[group] ?? 0
-                    let intensity = max(0.1, value / maxVal)
+                    let val = volumes[group] ?? 0
+                    let intensity = max(0.15, val / maxVal)
 
                     VStack {
                         RoundedRectangle(cornerRadius: 12)
@@ -223,80 +221,164 @@ struct AnalyticsView: View {
         }
     }
 
-    private func muscleVolumesLast30Days() -> [MuscleGroup: Double] {
-        let cutoff = calendar.date(byAdding: .day, value: -30, to: Date())!
+    private func muscleVolumes(days: Int) -> [MuscleGroup: Double] {
+        let cutoff = calendar.date(byAdding: .day, value: -days, to: Date())!
         let recent = sets.filter { $0.timestamp >= cutoff }
 
         var dict: [MuscleGroup: Double] = [:]
         for set in recent {
-            if let template = ExerciseLibrary.all.first(where: { $0.name == set.exerciseName }) {
-                dict[template.muscleGroup, default: 0] += set.weight * Double(set.reps)
+            if let ex = ExerciseLibrary.all.first(where: { $0.name == set.exerciseName }) {
+                dict[ex.muscleGroup, default: 0] += set.weight * Double(set.reps)
             }
         }
         return dict
     }
 
-    // ----------------------------------------------------------------------
-    // MARK: - COACH VIN (ENHANCED)
-    // ----------------------------------------------------------------------
+    // MARK: - Muscle Distribution
 
-    private var coachRecommendationCard: some View {
-        analyticsCard(title: "Coach Vin Suggests") {
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(coachMessages(), id: \.self) { msg in
-                    HStack(alignment: .top) {
-                        Image(systemName: "sparkles")
-                            .foregroundColor(.yellow)
-                        Text(msg)
-                            .font(.subheadline)
+    private var muscleDistributionCard: some View {
+        analyticsCard(title: "Muscle Distribution") {
+            VStack(spacing: 12) {
+                HStack {
+                    Picker("", selection: $selectedRange) {
+                        ForEach(TimeRange.allCases) { Text($0.rawValue).tag($0) }
                     }
+                    .pickerStyle(.menu)
+
+                    Spacer()
+
+                    Picker("", selection: $selectedMetric) {
+                        ForEach(MetricType.allCases) { Text($0.rawValue).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 180)
+                }
+
+                RadarChartView(
+                    values: distributionValues(),
+                    maxValue: distributionValues().values.max() ?? 1
+                )
+                .frame(height: 260)
+            }
+        }
+    }
+
+    private func distributionValues() -> [MuscleGroup: Double] {
+        let relevantSets: [SetEntry]
+        if let cutoff = selectedRange.cutoff(calendar: calendar) {
+            relevantSets = sets.filter { $0.timestamp >= cutoff }
+        } else {
+            relevantSets = sets
+        }
+
+        var dict: [MuscleGroup: Double] = [:]
+        for set in relevantSets {
+            if let ex = ExerciseLibrary.all.first(where: { $0.name == set.exerciseName }) {
+                if selectedMetric == .volume {
+                    dict[ex.muscleGroup, default: 0] += set.weight * Double(set.reps)
+                } else {
+                    dict[ex.muscleGroup, default: 0] += 1
                 }
             }
         }
+        return dict
     }
 
-    private func coachMessages() -> [String] {
-        var messages: [String] = []
+    // MARK: - Radar Chart View (FIXED)
 
-        let streak = currentStreak()
-        if streak >= 7 {
-            messages.append("🟡 You’ve trained \(streak) days straight. Consider a light or recovery day.")
-        } else if streak >= 4 {
-            messages.append("🔥 Strong consistency with a \(streak)-day streak.")
-        }
+    private struct RadarChartView: View {
+        let values: [MuscleGroup: Double]
+        let maxValue: Double
 
-        if let last = workouts.last?.date {
-            let gap = calendar.dateComponents([.day], from: last, to: Date()).day ?? 0
-            if gap >= 3 {
-                messages.append("💡 It’s been \(gap) days since your last workout. A short session could restart momentum.")
+        var body: some View {
+            GeometryReader { geo in
+                let center = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
+                let radius = min(geo.size.width, geo.size.height) / 2 - 20
+                let muscles = MuscleGroup.allCases
+
+                Path { path in
+                    for i in muscles.indices {
+                        let angle = angleFor(index: i, count: muscles.count)
+                        let value = values[muscles[i]] ?? 0
+                        let scaled = CGFloat(value / maxValue) * radius
+
+                        let point = CGPoint(
+                            x: center.x + cos(angle) * scaled,
+                            y: center.y + sin(angle) * scaled
+                        )
+
+                        i == 0 ? path.move(to: point) : path.addLine(to: point)
+                    }
+                    path.closeSubpath()
+                }
+                .fill(Color.blue.opacity(0.35))
+
+                Path { path in
+                    for i in muscles.indices {
+                        let angle = angleFor(index: i, count: muscles.count)
+                        let value = values[muscles[i]] ?? 0
+                        let scaled = CGFloat(value / maxValue) * radius
+
+                        let point = CGPoint(
+                            x: center.x + cos(angle) * scaled,
+                            y: center.y + sin(angle) * scaled
+                        )
+
+                        i == 0 ? path.move(to: point) : path.addLine(to: point)
+                    }
+                    path.closeSubpath()
+                }
+                .stroke(Color.blue, lineWidth: 2)
             }
         }
 
-        let muscleVolume = muscleVolumesLast30Days()
-        if let dominant = muscleVolume.max(by: { $0.value < $1.value })?.key {
-            messages.append("⚖️ \(dominant.displayName) is dominating recent volume. Balance with other muscle groups.")
+        private func angleFor(index: Int, count: Int) -> CGFloat {
+            CGFloat(Double(index) / Double(count) * 2 * .pi - .pi / 2)
         }
-
-        if workouts.count >= 3 {
-            let last3 = workouts.suffix(3).map { $0.totalVolume }
-            if last3.count == 3 && last3[2] > last3[1] * 1.35 {
-                messages.append("⚠️ Sharp volume spike detected. A deload or mobility day may help recovery.")
-            }
-        }
-
-        if messages.isEmpty {
-            messages.append("💪 Keep building momentum. You’re on a solid path.")
-        }
-
-        return messages
     }
 
-    // ----------------------------------------------------------------------
-    // MARK: - EXISTING CARDS
-    // ----------------------------------------------------------------------
+    // MARK: - Stats Grid
+
+    private var muscleStatsGrid: some View {
+        let stats = aggregateStats()
+
+        return LazyVGrid(columns: [GridItem(), GridItem()]) {
+            statTile("Workouts", "\(stats.workouts)")
+            statTile("Duration", stats.duration)
+            statTile("Volume", "\(Int(stats.volume))")
+            statTile("Sets", "\(stats.sets)")
+        }
+    }
+
+    private func aggregateStats() -> (workouts: Int, sets: Int, volume: Double, duration: String) {
+        let relevantWorkouts = workouts.filter {
+            guard let cutoff = selectedRange.cutoff(calendar: calendar) else { return true }
+            return $0.date >= cutoff
+        }
+
+        let relevantSets = sets.filter {
+            guard let cutoff = selectedRange.cutoff(calendar: calendar) else { return true }
+            return $0.timestamp >= cutoff
+        }
+
+        let volume = relevantSets.reduce(0) { $0 + ($1.weight * Double($1.reps)) }
+        let duration = "\(relevantWorkouts.count * 60 / 60)h"
+
+        return (relevantWorkouts.count, relevantSets.count, volume, duration)
+    }
+
+    // MARK: - Coach
+
+    private var coachRecommendationCard: some View {
+        analyticsCard(title: "Coach Vin Suggests") {
+            Text("💪 Keep building momentum. You’re on a solid path.")
+        }
+    }
+
+    // MARK: - Overview / Charts
 
     private var summaryCard: some View {
-        let totalVolume = sets.reduce(0) { $0 + ($1.weight * Double($1.reps)) }
+        let volume = sets.reduce(0) { $0 + ($1.weight * Double($1.reps)) }
 
         return analyticsCard(title: "Overview") {
             HStack {
@@ -304,36 +386,41 @@ struct AnalyticsView: View {
                 Spacer()
                 statBox("Sets", "\(sets.count)")
                 Spacer()
-                statBox("Volume", "\(Int(totalVolume))")
+                statBox("Volume", "\(Int(volume))")
             }
         }
     }
 
     private var volumeOverTimeCard: some View {
         analyticsCard(title: "Volume Over Time") {
-            Chart(workoutVolumePoints()) { pt in
-                LineMark(x: .value("Date", pt.date),
-                         y: .value("Volume", pt.volume))
+            Chart(workouts) {
+                LineMark(
+                    x: .value("Date", $0.date),
+                    y: .value("Volume", $0.totalVolume)
+                )
             }
             .frame(height: 220)
         }
     }
 
     private var topExercisesCard: some View {
-        let rows = topExercisesByVolume(limit: 5)
+        let rows = Dictionary(grouping: sets, by: { $0.exerciseName })
+            .map { ($0.key, $0.value.reduce(0) { $0 + ($1.weight * Double($1.reps)) }) }
+            .sorted { $0.1 > $1.1 }
+            .prefix(5)
 
         return analyticsCard(title: "Top Exercises") {
-            Chart(rows) { row in
-                BarMark(x: .value("Volume", row.volume),
-                        y: .value("Exercise", row.name))
+            Chart(rows, id: \.0) {
+                BarMark(
+                    x: .value("Volume", $0.1),
+                    y: .value("Exercise", $0.0)
+                )
             }
-            .frame(height: CGFloat(rows.count) * 32 + 40)
+            .frame(height: 200)
         }
     }
 
-    // ----------------------------------------------------------------------
-    // MARK: - HELPERS
-    // ----------------------------------------------------------------------
+    // MARK: - UI Helpers
 
     private func analyticsCard<Content: View>(
         title: String,
@@ -342,7 +429,7 @@ struct AnalyticsView: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title).font(.headline)
-            if let subtitle = subtitle {
+            if let subtitle {
                 Text(subtitle).font(.caption).foregroundStyle(.secondary)
             }
             content()
@@ -350,13 +437,12 @@ struct AnalyticsView: View {
         .padding()
         .background(
             LinearGradient(
-                colors: [Color.blue.opacity(0.18), Color.purple.opacity(0.14)],
+                colors: [.blue.opacity(0.18), .purple.opacity(0.14)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
         )
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.12), radius: 10, x: 0, y: 5)
     }
 
     private func statBox(_ title: String, _ value: String) -> some View {
@@ -366,34 +452,13 @@ struct AnalyticsView: View {
         }
     }
 
-    private struct VolumePoint: Identifiable {
-        let id = UUID()
-        let date: Date
-        let volume: Double
-    }
-
-    private func workoutVolumePoints() -> [VolumePoint] {
-        workouts.map {
-            VolumePoint(date: $0.date, volume: $0.totalVolume)
+    private func statTile(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading) {
+            Text(value).font(.title2.bold())
+            Text(title).font(.caption).foregroundStyle(.secondary)
         }
-    }
-
-    private struct ExerciseVolumeRow: Identifiable {
-        let id = UUID()
-        let name: String
-        let volume: Double
-    }
-
-    private func topExercisesByVolume(limit: Int) -> [ExerciseVolumeRow] {
-        let grouped = Dictionary(grouping: sets, by: { $0.exerciseName })
-        return grouped.map { name, sets in
-            ExerciseVolumeRow(
-                name: name,
-                volume: sets.reduce(0) { $0 + ($1.weight * Double($1.reps)) }
-            )
-        }
-        .sorted { $0.volume > $1.volume }
-        .prefix(limit)
-        .map { $0 }
+        .padding()
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 }
