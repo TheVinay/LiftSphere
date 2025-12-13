@@ -264,7 +264,11 @@ struct AnalyticsView: View {
 
                 RadarChartView(
                     values: distributionValues(),
-                    maxValue: distributionValues().values.max() ?? 1,
+                    previousValues: previousDistributionValues(),
+                    maxValue: max(
+                        distributionValues().values.max() ?? 1,
+                        previousDistributionValues().values.max() ?? 1
+                    ),
                     selectedMuscle: $selectedMuscle
                 )
 
@@ -321,9 +325,42 @@ struct AnalyticsView: View {
     }
 
     // MARK: - Radar Chart View (FIXED)
+    private func previousDistributionValues() -> [MuscleGroup: Double] {
+        
+        let duration: Int
+        switch selectedRange {
+        case .days7:  duration = 7
+        case .days15: duration = 15
+        case .days30: duration = 30
+        case .days90: duration = 90
+        case .all:    return [:]
+        }
+
+        let previousStart = calendar.date(byAdding: .day, value: -duration * 2, to: Date())!
+        let previousEnd   = calendar.date(byAdding: .day, value: -duration, to: Date())!
+
+        let previousSets = sets.filter {
+            $0.timestamp >= previousStart && $0.timestamp < previousEnd
+        }
+
+        var dict: [MuscleGroup: Double] = [:]
+        for set in previousSets {
+            if let ex = ExerciseLibrary.all.first(where: { $0.name == set.exerciseName }) {
+                if selectedMetric == .volume {
+                    dict[ex.muscleGroup, default: 0] += set.weight * Double(set.reps)
+                } else {
+                    dict[ex.muscleGroup, default: 0] += 1
+                }
+            }
+        }
+
+        return dict
+    }
+
 
     private struct RadarChartView: View {
         let values: [MuscleGroup: Double]
+        let previousValues: [MuscleGroup: Double]
         let maxValue: Double
         @Binding var selectedMuscle: MuscleGroup?
 
@@ -334,6 +371,27 @@ struct AnalyticsView: View {
                 let muscles = MuscleGroup.allCases
 
                 ZStack {
+                    
+                    if !previousValues.isEmpty {
+                        Path { path in
+                            for i in muscles.indices {
+                                let angle = angleFor(index: i, count: muscles.count)
+                                let value = previousValues[muscles[i]] ?? 0
+                                let scaled = CGFloat(value / maxValue) * radius
+
+                                let point = CGPoint(
+                                    x: center.x + cos(angle) * scaled,
+                                    y: center.y + sin(angle) * scaled
+                                )
+
+                                i == 0 ? path.move(to: point) : path.addLine(to: point)
+                            }
+                            path.closeSubpath()
+                        }
+                        .stroke(Color.gray.opacity(0.35), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                    }
+
+                    
                     ForEach(muscles.indices, id: \.self) { i in
                         let angle = angleFor(index: i, count: muscles.count)
                         let end = CGPoint(
@@ -347,7 +405,13 @@ struct AnalyticsView: View {
                         }
                         .stroke(Color.gray.opacity(0.4), lineWidth: 1)
 
-                        Text(muscles[i].displayName)
+                        Text("""
+                        \(muscles[i].displayName)
+                        \(percentage(for: muscles[i]))%
+                        """)
+                        .font(.caption)
+                        .multilineTextAlignment(.center)
+
                             .font(.caption)
                             .foregroundStyle(
                                 selectedMuscle == muscles[i] ? .blue : .secondary
@@ -458,6 +522,13 @@ struct AnalyticsView: View {
         }
         
         
+        private func percentage(for muscle: MuscleGroup) -> Int {
+            let total = values.values.reduce(0, +)
+            guard total > 0 else { return 0 }
+            return Int((values[muscle, default: 0] / total) * 100)
+        }
+
+        
         
         private func nearestMuscle(
             tap: CGPoint,
@@ -498,6 +569,9 @@ struct AnalyticsView: View {
             statTile("Volume", "\(Int(stats.volume))")
             statTile("Sets", "\(stats.sets)")
         }
+        .animation(.easeInOut(duration: 0.25), value: selectedMuscle)
+        .animation(.easeInOut(duration: 0.25), value: selectedRange)
+        .animation(.easeInOut(duration: 0.25), value: selectedMetric)
     }
 
     private func aggregateStats() -> (workouts: Int, sets: Int, volume: Double, duration: String) {
