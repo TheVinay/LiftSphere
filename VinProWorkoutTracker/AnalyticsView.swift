@@ -19,78 +19,121 @@ struct AnalyticsView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
-
-                    //If you want uncollapsed
-                    //muscleDistributionCard
-                    //muscleStatsGrid
-                    //coachRecommendationCard
-                    //undertrainedAlertCard
-                    // weeklySummaryCard
-                    //summaryCard
-                    //streaksCard
-                    //consistencyCalendarCard
-                    //muscleHeatmapCard
-                    
-                    collapsibleSection(
-                        title: "Muscle Distribution & Balance",
-                        initiallyExpanded: true
-                    ) {
-                        VStack(spacing: 16) {
-                            muscleDistributionCard
-                            muscleStatsGrid
-                            coachRecommendationCard
-                            undertrainedAlertCard
-                        }
-                    }
-
-                    
-                    
-
-                    
-                    CollapsibleSection(
-                        title: "Weekly Summary",
-                        subtitle: "This week vs last week"
-                    ) {
-                        weeklySummaryCard
-                    }
-
-                    CollapsibleSection(title: "Consistency") {
-                        consistencyCalendarCard
-                    }
-
-                    CollapsibleSection(title: "Muscle Activation") {
-                        muscleHeatmapCard
-                    }
-
-                    if !workouts.isEmpty {
-                        CollapsibleSection(title: "Volume Over Time") {
-                            volumeOverTimeCard
-                        }
-                    }
-
-                    if !sets.isEmpty {
-                        CollapsibleSection(title: "Top Exercises") {
-                            topExercisesCard
-                        }
-                    }
-
-                
-                    
-        
-                    //if !workouts.isEmpty {
-                    //    volumeOverTimeCard
-                    //}
-
-                    //if !sets.isEmpty {
-                    //    topExercisesCard
-                    //}
+            Group {
+                if workouts.isEmpty && sets.isEmpty {
+                    analyticsEmptyState
+                } else {
+                    analyticsContent
                 }
-                .padding()
             }
             .navigationTitle("Analytics")
             .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+    
+    // MARK: - Empty State
+    
+    private var analyticsEmptyState: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            
+            Image(systemName: "chart.bar.xaxis")
+                .font(.system(size: 80))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.blue, .purple],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+            
+            VStack(spacing: 8) {
+                Text("No Data Yet")
+                    .font(.title2.bold())
+                
+                Text("Complete workouts and log sets to see your analytics and progress charts")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
+            }
+            
+            Spacer()
+        }
+    }
+    
+    // MARK: - Content
+    
+    private var analyticsContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 22) {
+
+                //If you want uncollapsed
+                //muscleDistributionCard
+                //muscleStatsGrid
+                //coachRecommendationCard
+                //undertrainedAlertCard
+                // weeklySummaryCard
+                //summaryCard
+                //streaksCard
+                //consistencyCalendarCard
+                //muscleHeatmapCard
+                
+                collapsibleSection(
+                    title: "Muscle Distribution & Balance",
+                    initiallyExpanded: true
+                ) {
+                    VStack(spacing: 16) {
+                        muscleDistributionCard
+                        muscleStatsGrid
+                        coachRecommendationCard
+                        undertrainedAlertCard
+                    }
+                }
+
+                
+                
+
+                
+                CollapsibleSection(
+                    title: "Weekly Summary",
+                    subtitle: "This week vs last week"
+                ) {
+                    weeklySummaryCard
+                }
+
+                CollapsibleSection(title: "Consistency") {
+                    consistencyCalendarCard
+                }
+
+                CollapsibleSection(title: "Muscle Activation") {
+                    muscleHeatmapCard
+                }
+
+                if !workouts.isEmpty {
+                    CollapsibleSection(title: "Volume Over Time") {
+                        volumeOverTimeCard
+                    }
+                }
+
+                if !sets.isEmpty {
+                    CollapsibleSection(title: "Top Exercises") {
+                        topExercisesCard
+                    }
+                }
+
+            
+                
+    
+                //if !workouts.isEmpty {
+                //    volumeOverTimeCard
+                //}
+
+                //if !sets.isEmpty {
+                //    topExercisesCard
+                //}
+            }
+            .padding()
         }
     }
 

@@ -1,15 +1,18 @@
 import SwiftUI
+import SwiftData
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var context
+    
+    @Query(sort: \Workout.date, order: .reverse)
+    private var workouts: [Workout]
 
     private enum Appearance: Int, CaseIterable, Identifiable {
         case system = 0
         case light  = 1
         case dark   = 2
-
         var id: Int { rawValue }
-
         var title: String {
             switch self {
             case .system: return "System"
@@ -24,10 +27,18 @@ struct SettingsView: View {
     @AppStorage("appTheme") private var theme: Int = Appearance.system.rawValue
     @AppStorage("showArchivedWorkouts") private var showArchivedWorkouts: Bool = false
     @AppStorage("confirmBeforeDelete") private var confirmBeforeDelete: Bool = true
-
     @AppStorage("isSignedIn") private var isSignedIn: Bool = false
     @AppStorage("displayName") private var storedDisplayName: String = ""
     @AppStorage("didChooseLogin") private var didChooseLogin: Bool = false
+
+    @State private var showAppleSignIn = false
+    @State private var showExportOptions = false
+    @State private var exportError: String?
+    @State private var shareItem: ShareItem?
+    @State private var isExporting = false
+    
+    @State private var showPrivacyPolicy = false
+    @State private var showTerms = false
 
     var body: some View {
         NavigationStack {
@@ -36,21 +47,20 @@ struct SettingsView: View {
                 // BRANDING
                 Section {
                     HStack(spacing: 16) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(
-                                    LinearGradient(
-                                        colors: [.blue, .purple],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(
+                                LinearGradient(
+                                    colors: [.blue, .purple],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
                                 )
-                                .frame(width: 56, height: 56)
-
-                            Text("LS")
-                                .font(.title2.weight(.bold))
-                                .foregroundColor(.white)
-                        }
+                            )
+                            .frame(width: 56, height: 56)
+                            .overlay(
+                                Text("LS")
+                                    .font(.title2.weight(.bold))
+                                    .foregroundColor(.white)
+                            )
 
                         VStack(alignment: .leading) {
                             Text("LiftSphere Workout")
@@ -59,7 +69,6 @@ struct SettingsView: View {
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
-
                         Spacer()
                     }
                 }
@@ -75,7 +84,7 @@ struct SettingsView: View {
                         }
                     } else {
                         Button("Sign in with Apple") {
-                            didChooseLogin = false
+                            showAppleSignIn = true
                         }
                     }
                 }
@@ -95,9 +104,44 @@ struct SettingsView: View {
                     Toggle("Show Archived Workouts", isOn: $showArchivedWorkouts)
                     Toggle("Confirm Before Delete", isOn: $confirmBeforeDelete)
                 }
+                
+                // DATA EXPORT
+                Section("Data Export & Backup") {
+                    Button {
+                        showExportOptions = true
+                    } label: {
+                        Label("Export Workout Data", systemImage: "square.and.arrow.up")
+                    }
+                    
+                    Text("Export your workouts to CSV or JSON for backup or analysis")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                
+                // LEGAL
+                Section("Legal") {
+                    Button {
+                        showPrivacyPolicy = true
+                    } label: {
+                        Label("Privacy Policy", systemImage: "hand.raised")
+                    }
+                    
+                    Button {
+                        showTerms = true
+                    } label: {
+                        Label("Terms of Service", systemImage: "doc.text")
+                    }
+                }
 
                 // APP INFO
                 Section("App") {
+                    HStack {
+                        Text("Version")
+                        Spacer()
+                        Text("1.0.0")
+                            .foregroundStyle(.secondary)
+                    }
+                    
                     Text("LiftSphere Workout – Vin Edition")
                         .font(.headline)
                     Text("Back-friendly workout tracking with analytics.")
@@ -109,6 +153,94 @@ struct SettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
+                }
+            }
+            .sheet(isPresented: $showAppleSignIn) {
+                AppleSignInView { name in
+                    storedDisplayName = name
+                    isSignedIn = true
+                    didChooseLogin = true
+                    showAppleSignIn = false
+                }
+            }
+            .sheet(isPresented: $showPrivacyPolicy) {
+                Text("Privacy Policy - Coming Soon")
+                // PrivacyPolicyView()
+            }
+            .sheet(isPresented: $showTerms) {
+                Text("Terms of Service - Coming Soon")
+                // TermsOfServiceView()
+            }
+            .confirmationDialog("Export Format", isPresented: $showExportOptions) {
+                Button("Detailed CSV (All Sets)") {
+                    exportData(format: .detailedCSV)
+                }
+                
+                Button("Summary CSV (Workout Overview)") {
+                    exportData(format: .summaryCSV)
+                }
+                
+                Button("JSON (Complete Backup)") {
+                    exportData(format: .json)
+                }
+                
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Choose export format for your \(workouts.count) workouts")
+            }
+            .alert("Export Error", isPresented: .constant(exportError != nil)) {
+                Button("OK") {
+                    exportError = nil
+                }
+            } message: {
+                if let error = exportError {
+                    Text(error)
+                }
+            }
+            .sheet(item: $shareItem) { item in
+                ActivityView(activityItems: [item.url])
+            }
+            .overlay {
+                if isExporting {
+                    ZStack {
+                        Color.black.opacity(0.3)
+                            .ignoresSafeArea()
+                        
+                        ProgressView("Exporting...")
+                            .padding()
+                            .background(.regularMaterial)
+                            .cornerRadius(12)
+                    }
+                }
+            }
+        }
+    }
+    
+    // MARK: - Export Logic
+    
+    private func exportData(format: ExportManager.ExportFormat) {
+        guard !workouts.isEmpty else {
+            exportError = "No workouts to export"
+            return
+        }
+        
+        isExporting = true
+        
+        Task {
+            do {
+                let fileURL = try ExportManager.createExportFile(
+                    workouts: workouts,
+                    format: format
+                )
+                
+                await MainActor.run {
+                    isExporting = false
+                    shareItem = ShareItem(url: fileURL)
+                }
+            } catch {
+                await MainActor.run {
+                    isExporting = false
+                    exportError = error.localizedDescription
                 }
             }
         }

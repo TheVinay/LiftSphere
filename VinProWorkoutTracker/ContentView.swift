@@ -30,48 +30,11 @@ struct ContentView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-
-                // THIS WEEK
-                let thisWeek = visibleWorkouts.filter {
-                    calendar.isDate($0.date, equalTo: Date(), toGranularity: .weekOfYear)
-                }
-
-                if !thisWeek.isEmpty {
-                    Section("This Week") {
-                        ForEach(thisWeek) { workout in
-                            workoutRow(workout)
-                        }
-                    }
-                }
-
-                // LAST WEEK
-                let lastWeek = visibleWorkouts.filter {
-                    guard let lastWeekDate = calendar.date(byAdding: .weekOfYear, value: -1, to: Date()) else {
-                        return false
-                    }
-                    return calendar.isDate($0.date, equalTo: lastWeekDate, toGranularity: .weekOfYear)
-                }
-
-                if !lastWeek.isEmpty {
-                    Section("Last Week") {
-                        ForEach(lastWeek) { workout in
-                            workoutRow(workout)
-                        }
-                    }
-                }
-
-                // EARLIER
-                let earlier = visibleWorkouts.filter {
-                    !thisWeek.contains($0) && !lastWeek.contains($0)
-                }
-
-                if !earlier.isEmpty {
-                    Section("Earlier") {
-                        ForEach(earlier) { workout in
-                            workoutRow(workout)
-                        }
-                    }
+            Group {
+                if visibleWorkouts.isEmpty {
+                    emptyStateView
+                } else {
+                    workoutListView
                 }
             }
             .navigationTitle("Workouts")
@@ -88,8 +51,6 @@ struct ContentView: View {
             .sheet(isPresented: $showingNewWorkout) {
                 NewWorkoutView()
             }
-
-
             .alert("Delete Workout?",
                    isPresented: Binding(
                     get: { pendingDelete != nil },
@@ -108,6 +69,108 @@ struct ContentView: View {
                 }
             } message: {
                 Text("This workout will be permanently deleted.")
+            }
+        }
+    }
+    
+    // MARK: - Empty State
+    
+    private var emptyStateView: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            
+            Image(systemName: "figure.strengthtraining.traditional")
+                .font(.system(size: 80))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.blue, .purple],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+            
+            VStack(spacing: 8) {
+                Text(showArchivedWorkouts ? "No Archived Workouts" : "No Workouts Yet")
+                    .font(.title2.bold())
+                
+                Text(showArchivedWorkouts ? 
+                     "Your archived workouts will appear here" : 
+                     "Tap the + button to create your first workout")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
+            }
+            
+            if !showArchivedWorkouts {
+                Button {
+                    showingNewWorkout = true
+                } label: {
+                    Label("Create Workout", systemImage: "plus.circle.fill")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 32)
+                        .padding(.vertical, 16)
+                        .background(
+                            LinearGradient(
+                                colors: [.blue, .purple],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .cornerRadius(16)
+                }
+                .padding(.top, 8)
+            }
+            
+            Spacer()
+        }
+    }
+    
+    // MARK: - Workout List
+    
+    private var workoutListView: some View {
+        List {
+            // THIS WEEK
+            let thisWeek = visibleWorkouts.filter {
+                calendar.isDate($0.date, equalTo: Date(), toGranularity: .weekOfYear)
+            }
+
+            if !thisWeek.isEmpty {
+                Section("This Week") {
+                    ForEach(thisWeek) { workout in
+                        workoutRow(workout)
+                    }
+                }
+            }
+
+            // LAST WEEK
+            let lastWeek = visibleWorkouts.filter {
+                guard let lastWeekDate = calendar.date(byAdding: .weekOfYear, value: -1, to: Date()) else {
+                    return false
+                }
+                return calendar.isDate($0.date, equalTo: lastWeekDate, toGranularity: .weekOfYear)
+            }
+
+            if !lastWeek.isEmpty {
+                Section("Last Week") {
+                    ForEach(lastWeek) { workout in
+                        workoutRow(workout)
+                    }
+                }
+            }
+
+            // EARLIER
+            let earlier = visibleWorkouts.filter {
+                !thisWeek.contains($0) && !lastWeek.contains($0)
+            }
+
+            if !earlier.isEmpty {
+                Section("Earlier") {
+                    ForEach(earlier) { workout in
+                        workoutRow(workout)
+                    }
+                }
             }
         }
     }
@@ -207,16 +270,25 @@ struct ContentView: View {
     }
 
     private func toggleCompleted(_ workout: Workout) {
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+        
         workout.isCompleted.toggle()
         try? context.save()
     }
 
     private func toggleArchive(_ workout: Workout) {
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+        
         workout.isArchived.toggle()
         try? context.save()
     }
 
     private func repeatWorkout(_ workout: Workout) {
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+        
         let copy = Workout(
             date: Date(),
             name: workout.name,

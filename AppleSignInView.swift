@@ -2,9 +2,14 @@ import SwiftUI
 import AuthenticationServices
 
 struct AppleSignInView: View {
+
+    // MARK: - Persistent Apple account info
     @AppStorage("appleUserId") private var appleUserId: String = ""
     @AppStorage("appleFullName") private var appleFullName: String = ""
     @AppStorage("appleEmail") private var appleEmail: String = ""
+
+    // MARK: - Callback to parent (WelcomeView / SettingsView)
+    let onSuccess: (String) -> Void
 
     var body: some View {
         VStack(spacing: 24) {
@@ -44,32 +49,77 @@ struct AppleSignInView: View {
         }
     }
 
+    // MARK: - Apple Sign-In handler
+
     private func handleSignInResult(_ result: Result<ASAuthorization, Error>) {
         switch result {
+
         case .success(let auth):
-            if let credential = auth.credential as? ASAuthorizationAppleIDCredential {
-                // Unique Apple user ID for your app
-                let userId = credential.user
-                appleUserId = userId
+            guard let credential = auth.credential as? ASAuthorizationAppleIDCredential else {
+                print("⚠️ Sign in with Apple: Unexpected credential type")
+                return
+            }
 
-                // Full name (only guaranteed on first sign-in)
-                if let fullName = credential.fullName {
-                    let given = fullName.givenName ?? ""
-                    let family = fullName.familyName ?? ""
-                    let combined = "\(given) \(family)".trimmingCharacters(in: .whitespaces)
-                    if !combined.isEmpty {
-                        appleFullName = combined
-                    }
-                }
+            // Unique Apple user ID (stable per app)
+            let userId = credential.user
+            appleUserId = userId
+            print("✅ Apple Sign-In success. User ID: \(userId)")
 
-                // Email (if Apple shares it)
-                if let email = credential.email {
-                    appleEmail = email
+            // Full name (only provided on first authorization)
+            if let fullName = credential.fullName {
+                let given = fullName.givenName ?? ""
+                let family = fullName.familyName ?? ""
+                let combined = "\(given) \(family)".trimmingCharacters(in: .whitespaces)
+
+                if !combined.isEmpty {
+                    appleFullName = combined
+                    print("✅ Got name: \(combined)")
                 }
             }
 
+            // Email (may be nil on subsequent sign-ins)
+            if let email = credential.email {
+                appleEmail = email
+                print("✅ Got email: \(email)")
+            }
+
+            // Decide display name fallback order
+            let finalDisplayName: String = {
+                if !appleFullName.isEmpty {
+                    return appleFullName
+                }
+                if !appleEmail.isEmpty {
+                    return appleEmail.components(separatedBy: "@").first ?? "User"
+                }
+                return "User"
+            }()
+
+            // Notify parent view (Welcome / Settings)
+            onSuccess(finalDisplayName)
+
         case .failure(let error):
-            print("Sign in with Apple failed: \(error.localizedDescription)")
+            let nsError = error as NSError
+            print("❌ Sign in with Apple failed")
+            print("   Domain: \(nsError.domain)")
+            print("   Code: \(nsError.code)")
+            print("   Description: \(error.localizedDescription)")
+
+            if nsError.domain == ASAuthorizationError.errorDomain {
+                switch nsError.code {
+                case ASAuthorizationError.canceled.rawValue:
+                    print("   → User canceled")
+                case ASAuthorizationError.failed.rawValue:
+                    print("   → Authorization failed")
+                case ASAuthorizationError.invalidResponse.rawValue:
+                    print("   → Invalid response")
+                case ASAuthorizationError.notHandled.rawValue:
+                    print("   → Not handled")
+                case ASAuthorizationError.unknown.rawValue:
+                    print("   → Unknown error")
+                default:
+                    print("   → Other error code: \(nsError.code)")
+                }
+            }
         }
     }
 }

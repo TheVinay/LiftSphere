@@ -4,4 +4,34 @@
    <FileRef
       location = "self:">
    </FileRef>
+   <FileRef
+      location = "group:OnboardingView.swift">
+   </FileRef>
+   <FileRef
+      location = "group:PrivacyPolicyView.swift">
+   </FileRef>
+   <FileRef
+      location = "group:TermsOfServiceView.swift">
+   </FileRef>
+   <FileRef
+      location = "group:RootView.swift">
+   </FileRef>
+   <FileRef
+      location = "group:WorkoutWidget.swift">
+   </FileRef>
+   <FileRef
+      location = "group:WIDGET_SETUP.md">
+   </FileRef>
+   <FileRef
+      location = "group:README.md">
+   </FileRef>
+   <FileRef
+      location = "group:LAUNCH_CHECKLIST.md">
+   </FileRef>
+   <FileRef
+      location = "group:WHATS_NEW_V1.md">
+   </FileRef>
+   <FileRef
+      location = "group:QUICK_SUMMARY.md">
+   </FileRef>
 </Workspace>

@@ -47,13 +47,26 @@ struct ExerciseHistoryView: View {
             // PR banner
             if let msg = prMessage {
                 Section {
-                    HStack {
+                    HStack(spacing: 12) {
                         Image(systemName: "trophy.fill")
                             .foregroundColor(.yellow)
-                        Text(msg)
-                            .font(.subheadline.weight(.semibold))
+                            .font(.title2)
+                            .symbolEffect(.bounce, value: prMessage)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Personal Record!")
+                                .font(.caption.bold())
+                                .foregroundColor(.orange)
+                            Text(msg)
+                                .font(.subheadline.weight(.semibold))
+                        }
                     }
+                    .padding(.vertical, 8)
                 }
+                .listRowBackground(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.yellow.opacity(0.15))
+                )
             }
 
             // Add set
