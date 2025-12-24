@@ -20,6 +20,12 @@ struct ProfileView: View {
 
     @State private var showEditProfile = false
     @State private var showSettings = false
+    
+    // Collapsible sections
+    @State private var isVolumeCardExpanded = true
+    @State private var isTopExercisesExpanded = true
+    @State private var isStreakCardExpanded = true
+    @State private var isWeeklySummaryExpanded = true
 
     // MARK: - Name / avatar helpers
 
@@ -142,8 +148,37 @@ struct ProfileView: View {
 
                     // PROFILE ANALYTICS CARDS
                     VStack(spacing: 16) {
-                        volumeCard
-                        topExercisesCard
+                        // Volume Card - Collapsible
+                        collapsibleCard(
+                            title: "Last 30 Days Volume",
+                            isExpanded: $isVolumeCardExpanded
+                        ) {
+                            volumeCardContent
+                        }
+                        
+                        // Weekly Summary Card - Collapsible
+                        collapsibleCard(
+                            title: "Weekly Summary",
+                            isExpanded: $isWeeklySummaryExpanded
+                        ) {
+                            weeklySummaryCardContent
+                        }
+                        
+                        // Top Exercises Card - Collapsible
+                        collapsibleCard(
+                            title: "Top Exercises (All Time)",
+                            isExpanded: $isTopExercisesExpanded
+                        ) {
+                            topExercisesCardContent
+                        }
+                        
+                        // Streak Card - Collapsible (moved to bottom)
+                        collapsibleCard(
+                            title: "Workout Streak",
+                            isExpanded: $isStreakCardExpanded
+                        ) {
+                            streakCardContent
+                        }
                     }
                     .padding(.horizontal)
 
@@ -181,7 +216,207 @@ struct ProfileView: View {
     }
 
     // MARK: - Analytics cards
+    
+    // Helper for collapsible card
+    private func collapsibleCard<Content: View>(
+        title: String,
+        isExpanded: Binding<Bool>,
+        @ViewBuilder content: @escaping () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation {
+                    isExpanded.wrappedValue.toggle()
+                }
+            } label: {
+                HStack {
+                    Text(title)
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Spacer()
+                    
+                    Image(systemName: isExpanded.wrappedValue ? "chevron.up" : "chevron.down")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding()
+                .background(Color(.systemBackground))
+            }
+            .buttonStyle(.plain)
+            
+            if isExpanded.wrappedValue {
+                content()
+                    .padding(.horizontal)
+                    .padding(.bottom)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+    }
+    
+    // Streak Card Content
+    private var streakCardContent: some View {
+        let streakData = calculateStreakData()
+        
+        return VStack(spacing: 16) {
+            // Current Streak
+            HStack {
+                Image(systemName: "flame.fill")
+                    .font(.system(size: 40))
+                    .foregroundStyle(
+                        streakData.currentStreak > 0
+                        ? LinearGradient(colors: [.orange, .red], startPoint: .top, endPoint: .bottom)
+                        : LinearGradient(colors: [.gray, .gray.opacity(0.5)], startPoint: .top, endPoint: .bottom)
+                    )
+                
+                Spacer()
+                
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("\(streakData.currentStreak)")
+                        .font(.system(size: 36, weight: .bold))
+                        .foregroundColor(streakData.currentStreak > 0 ? .primary : .secondary)
+                    
+                    Text(streakData.currentStreak == 1 ? "Day Streak" : "Days Streak")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            
+            // Stats Grid
+            HStack(spacing: 12) {
+                miniStatCard(icon: "trophy.fill", color: .yellow, value: "\(streakData.longestStreak)", label: "Best")
+                miniStatCard(icon: "calendar", color: .blue, value: "\(streakData.workoutsThisMonth)", label: "This Month")
+                miniStatCard(icon: "figure.run", color: .green, value: "\(streakData.workoutsThisWeek)", label: "This Week")
+            }
+        }
+        .padding(.top, 4)
+    }
+    
+    // Weekly Summary Content
+    private var weeklySummaryCardContent: some View {
+        let thisWeekWorkouts = workouts.filter {
+            Calendar.current.isDate($0.date, equalTo: Date(), toGranularity: .weekOfYear)
+        }
+        
+        let lastWeekWorkouts = workouts.filter {
+            guard let lastWeekDate = Calendar.current.date(byAdding: .weekOfYear, value: -1, to: Date()) else {
+                return false
+            }
+            return Calendar.current.isDate($0.date, equalTo: lastWeekDate, toGranularity: .weekOfYear)
+        }
+        
+        let thisWeekVolume = thisWeekWorkouts.reduce(0) { $0 + $1.totalVolume }
+        let lastWeekVolume = lastWeekWorkouts.reduce(0) { $0 + $1.totalVolume }
+        
+        let volumeChange = lastWeekVolume > 0 ? ((thisWeekVolume - lastWeekVolume) / lastWeekVolume) * 100 : 0
+        
+        return VStack(spacing: 12) {
+            HStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("This Week")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("\(thisWeekWorkouts.count)")
+                        .font(.title.bold())
+                    Text("workouts")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Volume")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("\(Int(thisWeekVolume))")
+                        .font(.title.bold())
+                    HStack(spacing: 4) {
+                        Image(systemName: volumeChange >= 0 ? "arrow.up" : "arrow.down")
+                            .font(.caption2)
+                        Text(String(format: "%.0f%%", abs(volumeChange)))
+                            .font(.caption)
+                    }
+                    .foregroundStyle(volumeChange >= 0 ? .green : .red)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.top, 4)
+        }
+    }
 
+    private var volumeCardContent: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if recentVolumePoints.isEmpty {
+                Text("No sets logged in the last 30 days.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 4)
+            } else {
+                Chart(recentVolumePoints) { point in
+                    LineMark(
+                        x: .value("Date", point.date),
+                        y: .value("Volume", point.value)
+                    )
+                    .foregroundStyle(Color.blue)
+                    
+                    AreaMark(
+                        x: .value("Date", point.date),
+                        y: .value("Volume", point.value)
+                    )
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.blue.opacity(0.3), .blue.opacity(0.05)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                }
+                .frame(height: 160)
+                .padding(.top, 4)
+            }
+        }
+    }
+
+    private var topExercisesCardContent: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if topExercisesAllTime.isEmpty {
+                Text("No sets logged yet.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 4)
+            } else {
+                Chart(topExercisesAllTime) { ex in
+                    BarMark(
+                        x: .value("Volume", ex.volume),
+                        y: .value("Exercise", ex.name)
+                    )
+                    .foregroundStyle(Color.green)
+                }
+                .frame(height: CGFloat(topExercisesAllTime.count) * 30 + 20)
+                .padding(.top, 4)
+
+                Divider()
+                    .padding(.vertical, 4)
+
+                ForEach(topExercisesAllTime) { ex in
+                    HStack {
+                        Text(ex.name)
+                            .font(.subheadline)
+                        Spacer()
+                        Text("\(Int(ex.volume))")
+                            .font(.footnote.bold())
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+        }
+    }
+    
+    // Old card views (kept for reference, can be removed)
     private var volumeCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Last 30 days volume")
@@ -255,6 +490,102 @@ struct ProfileView: View {
         let id = UUID()
         let date: Date
         let value: Double
+    }
+    
+    private struct StreakData {
+        var currentStreak: Int
+        var longestStreak: Int
+        var workoutsThisWeek: Int
+        var workoutsThisMonth: Int
+    }
+    
+    private func calculateStreakData() -> StreakData {
+        guard !workouts.isEmpty else {
+            return StreakData(currentStreak: 0, longestStreak: 0, workoutsThisWeek: 0, workoutsThisMonth: 0)
+        }
+        
+        let calendar = Calendar.current
+        let workoutDates = workouts
+            .map { calendar.startOfDay(for: $0.date) }
+            .sorted(by: >)
+        
+        let uniqueDates = Array(Set(workoutDates)).sorted(by: >)
+        
+        // Calculate current streak
+        var currentStreak = 0
+        let today = calendar.startOfDay(for: Date())
+        
+        if let mostRecent = uniqueDates.first {
+            let daysSinceLastWorkout = calendar.dateComponents([.day], from: mostRecent, to: today).day ?? 0
+            
+            if daysSinceLastWorkout <= 1 {
+                var checkDate = mostRecent
+                for date in uniqueDates {
+                    if calendar.isDate(date, inSameDayAs: checkDate) {
+                        currentStreak += 1
+                        checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate) ?? checkDate
+                    } else if calendar.dateComponents([.day], from: date, to: checkDate).day ?? 0 > 1 {
+                        break
+                    }
+                }
+            }
+        }
+        
+        // Calculate longest streak
+        var longestStreak = 0
+        var tempStreak = 0
+        var previousDate: Date?
+        
+        for date in uniqueDates.reversed() {
+            if let prev = previousDate {
+                let daysDiff = calendar.dateComponents([.day], from: prev, to: date).day ?? 0
+                if daysDiff == 1 {
+                    tempStreak += 1
+                } else {
+                    longestStreak = max(longestStreak, tempStreak)
+                    tempStreak = 1
+                }
+            } else {
+                tempStreak = 1
+            }
+            previousDate = date
+        }
+        longestStreak = max(longestStreak, tempStreak)
+        
+        // This week
+        let startOfWeek = calendar.dateComponents([.calendar, .yearForWeekOfYear, .weekOfYear], from: today)
+        let weekStart = calendar.date(from: startOfWeek) ?? today
+        let workoutsThisWeek = workouts.filter { $0.date >= weekStart }.count
+        
+        // This month
+        let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: today)) ?? today
+        let workoutsThisMonth = workouts.filter { $0.date >= startOfMonth }.count
+        
+        return StreakData(
+            currentStreak: currentStreak,
+            longestStreak: longestStreak,
+            workoutsThisWeek: workoutsThisWeek,
+            workoutsThisMonth: workoutsThisMonth
+        )
+    }
+    
+    private func miniStatCard(icon: String, color: Color, value: String, label: String) -> some View {
+        VStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundColor(color)
+            
+            Text(value)
+                .font(.title3.bold())
+            
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(Color.secondary.opacity(0.08))
+        .cornerRadius(10)
     }
 
     private func statBlock(title: String, value: String) -> some View {

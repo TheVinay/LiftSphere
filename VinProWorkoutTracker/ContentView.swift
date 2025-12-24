@@ -201,15 +201,36 @@ struct ContentView: View {
                 }
             }
 
-            // EARLIER
-            let earlier = visibleWorkouts.filter {
+            // OLDER WORKOUTS - GROUPED BY MONTH
+            let olderWorkouts = visibleWorkouts.filter {
                 !thisWeek.contains($0) && !lastWeek.contains($0)
             }
-
-            if !earlier.isEmpty {
-                Section("Earlier") {
-                    ForEach(earlier) { workout in
-                        workoutRow(workout)
+            
+            // Group by month
+            let groupedByMonth = Dictionary(grouping: olderWorkouts) { workout -> String in
+                let formatter = DateFormatter()
+                formatter.dateFormat = "MMMM yyyy"
+                return formatter.string(from: workout.date)
+            }
+            
+            // Sort months in descending order
+            let sortedMonths = groupedByMonth.keys.sorted { month1, month2 in
+                let formatter = DateFormatter()
+                formatter.dateFormat = "MMMM yyyy"
+                guard let date1 = formatter.date(from: month1),
+                      let date2 = formatter.date(from: month2) else {
+                    return false
+                }
+                return date1 > date2
+            }
+            
+            // Display each month section
+            ForEach(sortedMonths, id: \.self) { month in
+                if let workoutsInMonth = groupedByMonth[month] {
+                    Section(month) {
+                        ForEach(workoutsInMonth) { workout in
+                            workoutRow(workout)
+                        }
                     }
                 }
             }

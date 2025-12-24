@@ -219,6 +219,42 @@ struct PDFExporter {
                         ]
                         "• \(exercise)".draw(at: CGPoint(x: leftMargin + 10, y: yPosition), withAttributes: bulletAttributes)
                         yPosition += 20
+                        
+                        // Show sets for accessory exercises too
+                        let exerciseSets = workout.sets.filter { $0.exerciseName == exercise }
+                        if !exerciseSets.isEmpty {
+                            for (index, set) in exerciseSets.enumerated() {
+                                let setAttributes: [NSAttributedString.Key: Any] = [
+                                    .font: captionFont,
+                                    .foregroundColor: UIColor.secondaryLabel
+                                ]
+                                let setText = "  Set \(index + 1): \(String(format: "%.1f", set.weight)) kg × \(set.reps) reps"
+                                setText.draw(at: CGPoint(x: leftMargin + 25, y: yPosition), withAttributes: setAttributes)
+                                yPosition += 18
+                            }
+                            yPosition += 5
+                        }
+                    }
+                    yPosition += 10
+                }
+                
+                // Stretches
+                if !workout.stretches.isEmpty {
+                    let stretchHeading = "Stretches"
+                    let headingAttributes: [NSAttributedString.Key: Any] = [
+                        .font: headingFont,
+                        .foregroundColor: UIColor.label
+                    ]
+                    stretchHeading.draw(at: CGPoint(x: leftMargin, y: yPosition), withAttributes: headingAttributes)
+                    yPosition += 25
+                    
+                    for stretch in workout.stretches {
+                        let bulletAttributes: [NSAttributedString.Key: Any] = [
+                            .font: bodyFont,
+                            .foregroundColor: UIColor.label
+                        ]
+                        "• \(stretch)".draw(at: CGPoint(x: leftMargin + 10, y: yPosition), withAttributes: bulletAttributes)
+                        yPosition += 20
                     }
                     yPosition += 10
                 }
