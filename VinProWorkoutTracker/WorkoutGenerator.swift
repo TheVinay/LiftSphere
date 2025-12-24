@@ -17,6 +17,8 @@ struct WorkoutGenerator {
         goal: Goal,
         selectedMuscles: Set<MuscleGroup>,
         calisthenicsOnly: Bool,
+        machinesOnly: Bool,
+        freeWeightsOnly: Bool,
         warmupMinutes: Int,
         coreMinutes: Int,
         stretchMinutes: Int
@@ -24,7 +26,9 @@ struct WorkoutGenerator {
 
         let candidates = ExerciseLibrary.forMode(mode,
                                                  selectedMuscles: selectedMuscles,
-                                                 calisthenicsOnly: calisthenicsOnly)
+                                                 calisthenicsOnly: calisthenicsOnly,
+                                                 machinesOnly: machinesOnly,
+                                                 freeWeightsOnly: freeWeightsOnly)
 
         let core = ExerciseLibrary.coreExercises
         let main = Array(candidates.shuffled().prefix(4))

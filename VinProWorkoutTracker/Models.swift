@@ -28,7 +28,7 @@ class Workout {
 
     // Status flags
     var isCompleted: Bool = false
-    var isArchived: Bool = false   // 👈 NEW
+    var isArchived: Bool = false
 
     // Durations
     var warmupMinutes: Int
@@ -39,6 +39,9 @@ class Workout {
     var mainExercises: [String]
     var coreExercises: [String]
     var stretches: [String]
+    
+    // Notes (for links, thoughts, etc.)
+    var notes: String = ""
 
     // Logged sets
     @Relationship(deleteRule: .cascade)
@@ -53,6 +56,7 @@ class Workout {
         mainExercises: [String] = [],
         coreExercises: [String] = [],
         stretches: [String] = [],
+        notes: String = "",
         sets: [SetEntry] = []
     ) {
         self.date = date
@@ -63,6 +67,7 @@ class Workout {
         self.mainExercises = mainExercises
         self.coreExercises = coreExercises
         self.stretches = stretches
+        self.notes = notes
         self.sets = sets
     }
 

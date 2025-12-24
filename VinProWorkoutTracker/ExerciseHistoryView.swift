@@ -44,6 +44,50 @@ struct ExerciseHistoryView: View {
 
     var body: some View {
         List {
+            // Progressive Overload Indicator
+            if let lastWorkoutData = getLastWorkoutComparison() {
+                Section {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Image(systemName: lastWorkoutData.icon)
+                                .foregroundColor(lastWorkoutData.color)
+                                .font(.title2)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Last Workout")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                
+                                Text(lastWorkoutData.message)
+                                    .font(.subheadline.weight(.semibold))
+                            }
+                            
+                            Spacer()
+                        }
+                        
+                        // Show best set from last workout
+                        if let bestSet = lastWorkoutData.bestSet {
+                            HStack {
+                                Text("Target to beat:")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                
+                                Spacer()
+                                
+                                Text("\(formatWeight(bestSet.weight)) × \(bestSet.reps)")
+                                    .font(.caption.bold())
+                                    .foregroundColor(lastWorkoutData.color)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+                .listRowBackground(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(lastWorkoutData.color.opacity(0.1))
+                )
+            }
+            
             // PR banner
             if let msg = prMessage {
                 Section {
@@ -177,6 +221,73 @@ struct ExerciseHistoryView: View {
 
     private func formatWeight(_ w: Double) -> String {
         String(format: "%.1f", w)
+    }
+    
+    // MARK: - Progressive Overload
+    
+    private struct LastWorkoutData {
+        let message: String
+        let icon: String
+        let color: Color
+        let bestSet: SetEntry?
+    }
+    
+    private func getLastWorkoutComparison() -> LastWorkoutData? {
+        // Find the last workout (before today's) that had this exercise
+        let previousWorkouts = allSets
+            .filter { $0.exerciseName == exerciseName }
+            .filter { !calendar.isDate($0.timestamp, inSameDayAs: Date()) }
+        
+        guard !previousWorkouts.isEmpty else { return nil }
+        
+        // Get the best set from the last workout
+        let lastWorkoutBestSet = previousWorkouts.first // Already sorted by timestamp desc
+        
+        guard let lastBest = lastWorkoutBestSet else { return nil }
+        
+        // Compare with today's best set (if any)
+        if let todayBest = todaySets.max(by: { a, b in
+            if a.weight == b.weight {
+                return a.reps < b.reps
+            }
+            return a.weight < b.weight
+        }) {
+            // We have logged sets today, compare them
+            if todayBest.weight > lastBest.weight || (todayBest.weight == lastBest.weight && todayBest.reps > lastBest.reps) {
+                return LastWorkoutData(
+                    message: "You beat your last workout! 💪",
+                    icon: "arrow.up.circle.fill",
+                    color: .green,
+                    bestSet: lastBest
+                )
+            } else if todayBest.weight == lastBest.weight && todayBest.reps == lastBest.reps {
+                return LastWorkoutData(
+                    message: "Matched your last workout",
+                    icon: "arrow.right.circle.fill",
+                    color: .blue,
+                    bestSet: lastBest
+                )
+            } else {
+                return LastWorkoutData(
+                    message: "Try to beat your last workout",
+                    icon: "arrow.down.circle.fill",
+                    color: .orange,
+                    bestSet: lastBest
+                )
+            }
+        } else {
+            // No sets logged today yet, show target
+            return LastWorkoutData(
+                message: "Target for today",
+                icon: "target",
+                color: .blue,
+                bestSet: lastBest
+            )
+        }
+    }
+    
+    private var calendar: Calendar {
+        Calendar.current
     }
 }
 

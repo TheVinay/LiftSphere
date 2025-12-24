@@ -112,33 +112,64 @@ struct ExerciseLibrary {
         .init(name: "Side Plank", muscleGroup: .core, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
         .init(name: "Dead Bug", muscleGroup: .core, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
         .init(name: "Bird Dog", muscleGroup: .core, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
-        .init(name: "Pallof Press (cable/band)", muscleGroup: .core, equipment: .cable, isCalisthenic: false, lowBackSafe: true)
+        .init(name: "Pallof Press (cable/band)", muscleGroup: .core, equipment: .cable, isCalisthenic: false, lowBackSafe: true),
+        
+        // ADDITIONAL EXERCISES FOR TEMPLATES
+        .init(name: "Rope Lat Prayer", muscleGroup: .back, equipment: .cable, isCalisthenic: false, lowBackSafe: true),
+        .init(name: "Swiss Ball Plank", muscleGroup: .core, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
+        .init(name: "Bulgarian Split Squat", muscleGroup: .legs, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
+        .init(name: "Glute Bridge", muscleGroup: .glutes, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
+        .init(name: "Seated Leg Curl", muscleGroup: .legs, equipment: .machine, isCalisthenic: false, lowBackSafe: true),
+        .init(name: "Calf Raise", muscleGroup: .legs, equipment: .machine, isCalisthenic: false, lowBackSafe: true),
+        .init(name: "Farmer Carry", muscleGroup: .core, equipment: .dumbbell, isCalisthenic: false, lowBackSafe: true),
+        .init(name: "Row Machine", muscleGroup: .back, equipment: .machine, isCalisthenic: false, lowBackSafe: true),
+        .init(name: "Hanging Knee Raise", muscleGroup: .core, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
+        .init(name: "Toe Touch Crunch", muscleGroup: .core, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
+        .init(name: "Incline Dumbbell Press (Neutral)", muscleGroup: .chest, equipment: .dumbbell, isCalisthenic: false, lowBackSafe: true),
+        .init(name: "Machine Shoulder Press", muscleGroup: .shoulders, equipment: .machine, isCalisthenic: false, lowBackSafe: true),
+        .init(name: "Cable Fly", muscleGroup: .chest, equipment: .cable, isCalisthenic: false, lowBackSafe: true),
+        .init(name: "Plank to Push-Up", muscleGroup: .core, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
+        
+        // ADD YOUR NEW EXERCISES HERE
+        // Example format:
+        // .init(name: "Exercise Name", muscleGroup: .chest, equipment: .dumbbell, isCalisthenic: false, lowBackSafe: true),
     ]
 
     static func forMode(_ mode: WorkoutMode,
                         selectedMuscles: Set<MuscleGroup>,
-                        calisthenicsOnly: Bool) -> [ExerciseTemplate] {
+                        calisthenicsOnly: Bool,
+                        machinesOnly: Bool,
+                        freeWeightsOnly: Bool) -> [ExerciseTemplate] {
 
-        let base = all.filter { $0.lowBackSafe }
+        var base = all.filter { $0.lowBackSafe }
+        
+        // Apply equipment filters
+        if calisthenicsOnly {
+            base = base.filter { $0.isCalisthenic }
+        } else if machinesOnly {
+            base = base.filter { $0.equipment == .machine || $0.equipment == .cable }
+        } else if freeWeightsOnly {
+            base = base.filter { $0.equipment == .barbell || $0.equipment == .dumbbell }
+        }
 
         switch mode {
         case .push:
-            return base.filter { [.chest, .shoulders, .arms].contains($0.muscleGroup) && (!calisthenicsOnly || $0.isCalisthenic) }
+            return base.filter { [.chest, .shoulders, .arms].contains($0.muscleGroup) }
 
         case .pull:
-            return base.filter { [.back, .arms].contains($0.muscleGroup) && (!calisthenicsOnly || $0.isCalisthenic) }
+            return base.filter { [.back, .arms].contains($0.muscleGroup) }
 
         case .legs:
-            return base.filter { ($0.muscleGroup == .legs || $0.muscleGroup == .glutes) && (!calisthenicsOnly || $0.isCalisthenic) }
+            return base.filter { $0.muscleGroup == .legs || $0.muscleGroup == .glutes }
 
         case .full:
-            return base.filter { [.chest, .back, .legs, .shoulders].contains($0.muscleGroup) && (!calisthenicsOnly || $0.isCalisthenic) }
+            return base.filter { [.chest, .back, .legs, .shoulders].contains($0.muscleGroup) }
 
         case .calisthenics:
             return base.filter { $0.isCalisthenic }
 
         case .muscleGroups:
-            return base.filter { selectedMuscles.contains($0.muscleGroup) && (!calisthenicsOnly || $0.isCalisthenic) }
+            return base.filter { selectedMuscles.contains($0.muscleGroup) }
         }
     }
 

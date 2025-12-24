@@ -94,6 +94,170 @@ struct CSVExporter {
     }
 }
 
+// MARK: - PDF Export
+
+import UIKit
+import PDFKit
+
+struct PDFExporter {
+    static func createPDF(for workouts: [Workout]) throws -> Data {
+        let pdfMetaData = [
+            kCGPDFContextCreator: "VinPro Workout Tracker",
+            kCGPDFContextAuthor: "VinPro",
+            kCGPDFContextTitle: "Workout Summary"
+        ]
+        let format = UIGraphicsPDFRendererFormat()
+        format.documentInfo = pdfMetaData as [String: Any]
+        
+        let pageRect = CGRect(x: 0, y: 0, width: 595, height: 842) // A4 size
+        let renderer = UIGraphicsPDFRenderer(bounds: pageRect, format: format)
+        
+        let data = renderer.pdfData { context in
+            for (index, workout) in workouts.enumerated() {
+                context.beginPage()
+                
+                let titleFont = UIFont.boldSystemFont(ofSize: 24)
+                let headingFont = UIFont.boldSystemFont(ofSize: 16)
+                let bodyFont = UIFont.systemFont(ofSize: 12)
+                let captionFont = UIFont.systemFont(ofSize: 10)
+                
+                var yPosition: CGFloat = 40
+                let leftMargin: CGFloat = 40
+                let rightMargin: CGFloat = 555
+                let maxWidth = rightMargin - leftMargin
+                
+                // Title
+                let titleText = workout.name
+                let titleAttributes: [NSAttributedString.Key: Any] = [
+                    .font: titleFont,
+                    .foregroundColor: UIColor.label
+                ]
+                titleText.draw(at: CGPoint(x: leftMargin, y: yPosition), withAttributes: titleAttributes)
+                yPosition += 35
+                
+                // Date
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateStyle = .long
+                dateFormatter.timeStyle = .none
+                let dateText = dateFormatter.string(from: workout.date)
+                let dateAttributes: [NSAttributedString.Key: Any] = [
+                    .font: bodyFont,
+                    .foregroundColor: UIColor.secondaryLabel
+                ]
+                dateText.draw(at: CGPoint(x: leftMargin, y: yPosition), withAttributes: dateAttributes)
+                yPosition += 30
+                
+                // Summary Box
+                let summaryRect = CGRect(x: leftMargin, y: yPosition, width: maxWidth, height: 80)
+                let summaryPath = UIBezierPath(roundedRect: summaryRect, cornerRadius: 8)
+                UIColor.systemGray6.setFill()
+                summaryPath.fill()
+                
+                let summaryY = yPosition + 15
+                let summaryFont = UIFont.systemFont(ofSize: 11)
+                let summaryAttributes: [NSAttributedString.Key: Any] = [
+                    .font: summaryFont,
+                    .foregroundColor: UIColor.label
+                ]
+                
+                "Total Sets: \(workout.sets.count)".draw(at: CGPoint(x: leftMargin + 15, y: summaryY), withAttributes: summaryAttributes)
+                "Total Volume: \(Int(workout.totalVolume))".draw(at: CGPoint(x: leftMargin + 15, y: summaryY + 20), withAttributes: summaryAttributes)
+                "Duration: Warmup \(workout.warmupMinutes)m • Core \(workout.coreMinutes)m • Stretch \(workout.stretchMinutes)m".draw(at: CGPoint(x: leftMargin + 15, y: summaryY + 40), withAttributes: summaryAttributes)
+                
+                yPosition += 100
+                
+                // Main Exercises
+                if !workout.mainExercises.isEmpty {
+                    let mainHeading = "Main Exercises"
+                    let headingAttributes: [NSAttributedString.Key: Any] = [
+                        .font: headingFont,
+                        .foregroundColor: UIColor.label
+                    ]
+                    mainHeading.draw(at: CGPoint(x: leftMargin, y: yPosition), withAttributes: headingAttributes)
+                    yPosition += 25
+                    
+                    for exercise in workout.mainExercises {
+                        let bulletAttributes: [NSAttributedString.Key: Any] = [
+                            .font: bodyFont,
+                            .foregroundColor: UIColor.label
+                        ]
+                        "• \(exercise)".draw(at: CGPoint(x: leftMargin + 10, y: yPosition), withAttributes: bulletAttributes)
+                        yPosition += 20
+                        
+                        // Show sets for this exercise
+                        let exerciseSets = workout.sets.filter { $0.exerciseName == exercise }
+                        if !exerciseSets.isEmpty {
+                            for (index, set) in exerciseSets.enumerated() {
+                                let setAttributes: [NSAttributedString.Key: Any] = [
+                                    .font: captionFont,
+                                    .foregroundColor: UIColor.secondaryLabel
+                                ]
+                                let setText = "  Set \(index + 1): \(String(format: "%.1f", set.weight)) kg × \(set.reps) reps"
+                                setText.draw(at: CGPoint(x: leftMargin + 25, y: yPosition), withAttributes: setAttributes)
+                                yPosition += 18
+                            }
+                            yPosition += 5
+                        }
+                    }
+                    yPosition += 10
+                }
+                
+                // Accessory Exercises
+                if !workout.coreExercises.isEmpty {
+                    let accessoryHeading = "Accessory / Core"
+                    let headingAttributes: [NSAttributedString.Key: Any] = [
+                        .font: headingFont,
+                        .foregroundColor: UIColor.label
+                    ]
+                    accessoryHeading.draw(at: CGPoint(x: leftMargin, y: yPosition), withAttributes: headingAttributes)
+                    yPosition += 25
+                    
+                    for exercise in workout.coreExercises {
+                        let bulletAttributes: [NSAttributedString.Key: Any] = [
+                            .font: bodyFont,
+                            .foregroundColor: UIColor.label
+                        ]
+                        "• \(exercise)".draw(at: CGPoint(x: leftMargin + 10, y: yPosition), withAttributes: bulletAttributes)
+                        yPosition += 20
+                    }
+                    yPosition += 10
+                }
+                
+                // Notes
+                if !workout.notes.isEmpty {
+                    let notesHeading = "Notes"
+                    let headingAttributes: [NSAttributedString.Key: Any] = [
+                        .font: headingFont,
+                        .foregroundColor: UIColor.label
+                    ]
+                    notesHeading.draw(at: CGPoint(x: leftMargin, y: yPosition), withAttributes: headingAttributes)
+                    yPosition += 25
+                    
+                    let notesAttributes: [NSAttributedString.Key: Any] = [
+                        .font: bodyFont,
+                        .foregroundColor: UIColor.secondaryLabel
+                    ]
+                    let notesRect = CGRect(x: leftMargin + 10, y: yPosition, width: maxWidth - 20, height: 200)
+                    workout.notes.draw(in: notesRect, withAttributes: notesAttributes)
+                }
+                
+                // Footer
+                let footerY = pageRect.height - 40
+                let footerText = "Generated by VinPro Workout Tracker • Page \(index + 1) of \(workouts.count)"
+                let footerAttributes: [NSAttributedString.Key: Any] = [
+                    .font: captionFont,
+                    .foregroundColor: UIColor.tertiaryLabel
+                ]
+                let footerSize = footerText.size(withAttributes: footerAttributes)
+                let footerX = (pageRect.width - footerSize.width) / 2
+                footerText.draw(at: CGPoint(x: footerX, y: footerY), withAttributes: footerAttributes)
+            }
+        }
+        
+        return data
+    }
+}
+
 // MARK: - Export Manager
 
 struct ExportManager {
@@ -101,6 +265,7 @@ struct ExportManager {
         case json
         case detailedCSV
         case summaryCSV
+        case pdf
     }
     
     /// Create a temporary file URL for export
@@ -138,6 +303,10 @@ struct ExportManager {
                 throw ExportError.encodingFailed
             }
             fileContent = data
+            
+        case .pdf:
+            fileName = "workout_\(Date().timeIntervalSince1970).pdf"
+            fileContent = try PDFExporter.createPDF(for: workouts)
         }
         
         let tempDirectory = FileManager.default.temporaryDirectory

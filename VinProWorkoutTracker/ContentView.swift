@@ -14,6 +14,8 @@ struct ContentView: View {
     @AppStorage("confirmBeforeDelete") private var confirmBeforeDelete: Bool = true
 
     @State private var showingNewWorkout = false
+    @State private var showingQuickRepeat = false
+    @State private var selectedWorkoutToRepeat: Workout?
 
     
     // Export / import
@@ -50,6 +52,15 @@ struct ContentView: View {
             }
             .sheet(isPresented: $showingNewWorkout) {
                 NewWorkoutView()
+            }
+            .sheet(isPresented: $showingQuickRepeat) {
+                QuickRepeatSheet(
+                    workouts: visibleWorkouts.prefix(10).map { $0 },
+                    isPresented: $showingQuickRepeat,
+                    onSelect: { workout in
+                        repeatWorkout(workout)
+                    }
+                )
             }
             .alert("Delete Workout?",
                    isPresented: Binding(
@@ -131,6 +142,36 @@ struct ContentView: View {
     
     private var workoutListView: some View {
         List {
+            // QUICK REPEAT SECTION
+            Section {
+                Button {
+                    showingQuickRepeat = true
+                } label: {
+                    HStack {
+                        Image(systemName: "arrow.counterclockwise")
+                            .foregroundColor(.blue)
+                            .font(.title3)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Quick Repeat")
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                            
+                            Text("Repeat a recent workout")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.secondary)
+                            .font(.caption)
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+            
             // THIS WEEK
             let thisWeek = visibleWorkouts.filter {
                 calendar.isDate($0.date, equalTo: Date(), toGranularity: .weekOfYear)
@@ -308,3 +349,75 @@ struct ContentView: View {
         // unchanged – uses WorkoutExportSupport
     }
 }
+// MARK: - Quick Repeat Sheet
+
+private struct QuickRepeatSheet: View {
+    let workouts: [Workout]
+    @Binding var isPresented: Bool
+    let onSelect: (Workout) -> Void
+    
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(workouts) { workout in
+                        Button {
+                            onSelect(workout)
+                            isPresented = false
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(workout.name)
+                                        .font(.headline)
+                                        .foregroundColor(.primary)
+                                    
+                                    HStack(spacing: 8) {
+                                        Text(workout.date.formatted(date: .abbreviated, time: .omitted))
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                        
+                                        if workout.totalVolume > 0 {
+                                            Text("•")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                            
+                                            Text("Vol: \(Int(workout.totalVolume))")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        }
+                                    }
+                                    
+                                    if !workout.mainExercises.isEmpty {
+                                        Text("\(workout.mainExercises.count) exercises")
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "arrow.counterclockwise.circle.fill")
+                                    .foregroundColor(.blue)
+                                    .font(.title2)
+                            }
+                            .padding(.vertical, 4)
+                        }
+                    }
+                } header: {
+                    Text("Select a workout to repeat")
+                }
+            }
+            .navigationTitle("Quick Repeat")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        isPresented = false
+                    }
+                }
+            }
+        }
+    }
+}
+
+

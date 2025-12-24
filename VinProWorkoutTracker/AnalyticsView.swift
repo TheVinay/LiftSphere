@@ -69,15 +69,23 @@ struct AnalyticsView: View {
             VStack(alignment: .leading, spacing: 22) {
 
                 //If you want uncollapsed
+                //streakCard
                 //muscleDistributionCard
                 //muscleStatsGrid
                 //coachRecommendationCard
                 //undertrainedAlertCard
                 // weeklySummaryCard
                 //summaryCard
-                //streaksCard
                 //consistencyCalendarCard
                 //muscleHeatmapCard
+                
+                // STREAK SECTION - First for motivation!
+                CollapsibleSection(
+                    title: "Workout Streak",
+                    subtitle: "Keep the momentum going!"
+                ) {
+                    streakCard
+                }
                 
                 collapsibleSection(
                     title: "Muscle Distribution & Balance",
@@ -472,6 +480,219 @@ struct AnalyticsView: View {
             }
         }
         return dict
+    }
+
+    // MARK: - Streak Card
+
+    private var streakCard: some View {
+        let streakData = calculateStreakData()
+        
+        return VStack(spacing: 16) {
+            // Current Streak - Large Display
+            VStack(spacing: 8) {
+                HStack {
+                    Image(systemName: "flame.fill")
+                        .font(.system(size: 50))
+                        .foregroundStyle(
+                            streakData.currentStreak > 0 
+                            ? LinearGradient(colors: [.orange, .red], startPoint: .top, endPoint: .bottom)
+                            : LinearGradient(colors: [.gray, .gray.opacity(0.5)], startPoint: .top, endPoint: .bottom)
+                        )
+                    
+                    Spacer()
+                    
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text("\(streakData.currentStreak)")
+                            .font(.system(size: 48, weight: .bold))
+                            .foregroundColor(streakData.currentStreak > 0 ? .primary : .secondary)
+                        
+                        Text(streakData.currentStreak == 1 ? "Day" : "Days")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                
+                Text(streakData.currentStreak > 0 ? "Current Streak" : "No Active Streak")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
+            .padding()
+            .background(Color.secondary.opacity(0.1))
+            .cornerRadius(12)
+            
+            // Stats Grid
+            HStack(spacing: 12) {
+                // Longest Streak
+                VStack(spacing: 6) {
+                    Image(systemName: "trophy.fill")
+                        .font(.title2)
+                        .foregroundColor(.yellow)
+                    
+                    Text("\(streakData.longestStreak)")
+                        .font(.title2.bold())
+                    
+                    Text("Longest")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.secondary.opacity(0.08))
+                .cornerRadius(10)
+                
+                // This Month
+                VStack(spacing: 6) {
+                    Image(systemName: "calendar.badge.clock")
+                        .font(.title2)
+                        .foregroundColor(.blue)
+                    
+                    Text("\(streakData.workoutsThisMonth)")
+                        .font(.title2.bold())
+                    
+                    Text("This Month")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.secondary.opacity(0.08))
+                .cornerRadius(10)
+                
+                // This Week
+                VStack(spacing: 6) {
+                    Image(systemName: "figure.run")
+                        .font(.title2)
+                        .foregroundColor(.green)
+                    
+                    Text("\(streakData.workoutsThisWeek)")
+                        .font(.title2.bold())
+                    
+                    Text("This Week")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.secondary.opacity(0.08))
+                .cornerRadius(10)
+            }
+            
+            // Last Workout Info
+            if let lastWorkout = streakData.lastWorkoutDate {
+                HStack {
+                    Image(systemName: "clock.fill")
+                        .foregroundColor(.secondary)
+                    
+                    Text("Last workout: \(formatLastWorkoutDate(lastWorkout))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 4)
+            }
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(16)
+        .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
+    }
+    
+    // MARK: - Streak Calculations
+    
+    private struct StreakData {
+        var currentStreak: Int
+        var longestStreak: Int
+        var workoutsThisWeek: Int
+        var workoutsThisMonth: Int
+        var lastWorkoutDate: Date?
+    }
+    
+    private func calculateStreakData() -> StreakData {
+        guard !workouts.isEmpty else {
+            return StreakData(currentStreak: 0, longestStreak: 0, workoutsThisWeek: 0, workoutsThisMonth: 0, lastWorkoutDate: nil)
+        }
+        
+        // Get unique workout dates (ignore time)
+        let workoutDates = workouts
+            .map { calendar.startOfDay(for: $0.date) }
+            .sorted(by: >)
+        
+        let uniqueDates = Array(Set(workoutDates)).sorted(by: >)
+        
+        // Calculate current streak
+        var currentStreak = 0
+        let today = calendar.startOfDay(for: Date())
+        
+        if let mostRecent = uniqueDates.first {
+            let daysSinceLastWorkout = calendar.dateComponents([.day], from: mostRecent, to: today).day ?? 0
+            
+            // Only count as active if workout was today or yesterday
+            if daysSinceLastWorkout <= 1 {
+                var checkDate = mostRecent
+                for date in uniqueDates {
+                    if calendar.isDate(date, inSameDayAs: checkDate) {
+                        currentStreak += 1
+                        checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate) ?? checkDate
+                    } else if calendar.dateComponents([.day], from: date, to: checkDate).day ?? 0 > 1 {
+                        break
+                    }
+                }
+            }
+        }
+        
+        // Calculate longest streak
+        var longestStreak = 0
+        var tempStreak = 0
+        var previousDate: Date?
+        
+        for date in uniqueDates.reversed() {
+            if let prev = previousDate {
+                let daysDiff = calendar.dateComponents([.day], from: prev, to: date).day ?? 0
+                if daysDiff == 1 {
+                    tempStreak += 1
+                } else {
+                    longestStreak = max(longestStreak, tempStreak)
+                    tempStreak = 1
+                }
+            } else {
+                tempStreak = 1
+            }
+            previousDate = date
+        }
+        longestStreak = max(longestStreak, tempStreak)
+        
+        // This week
+        let startOfWeek = calendar.dateComponents([.calendar, .yearForWeekOfYear, .weekOfYear], from: today)
+        let weekStart = calendar.date(from: startOfWeek) ?? today
+        let workoutsThisWeek = workouts.filter { $0.date >= weekStart }.count
+        
+        // This month
+        let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: today)) ?? today
+        let workoutsThisMonth = workouts.filter { $0.date >= startOfMonth }.count
+        
+        return StreakData(
+            currentStreak: currentStreak,
+            longestStreak: longestStreak,
+            workoutsThisWeek: workoutsThisWeek,
+            workoutsThisMonth: workoutsThisMonth,
+            lastWorkoutDate: workouts.last?.date
+        )
+    }
+    
+    private func formatLastWorkoutDate(_ date: Date) -> String {
+        let daysDiff = calendar.dateComponents([.day], from: calendar.startOfDay(for: date), to: calendar.startOfDay(for: Date())).day ?? 0
+        
+        if daysDiff == 0 {
+            return "Today"
+        } else if daysDiff == 1 {
+            return "Yesterday"
+        } else {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMM d"
+            return formatter.string(from: date)
+        }
     }
 
     // MARK: - Muscle Distribution
