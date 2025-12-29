@@ -6,6 +6,9 @@ struct VinProWorkoutTrackerApp: App {
 
     // Theme: 0 = System, 1 = Light, 2 = Dark
     @AppStorage("appTheme") private var theme: Int = 0
+    
+    // Authentication
+    @State private var authManager = AuthenticationManager()
 
     let sharedModelContainer: ModelContainer = {
         let schema = Schema([Workout.self, SetEntry.self])
@@ -14,8 +17,14 @@ struct VinProWorkoutTrackerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
-                .preferredColorScheme(colorScheme(for: theme))
+            if authManager.isAuthenticated {
+                RootView()
+                    .preferredColorScheme(colorScheme(for: theme))
+                    .environment(authManager)
+            } else {
+                SignInView()
+                    .environment(authManager)
+            }
         }
         .modelContainer(sharedModelContainer)
     }

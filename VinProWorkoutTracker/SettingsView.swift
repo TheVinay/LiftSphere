@@ -4,6 +4,7 @@ import SwiftData
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
+    @Environment(AuthenticationManager.self) private var authManager
     
     @Query(sort: \Workout.date, order: .reverse)
     private var workouts: [Workout]
@@ -75,17 +76,28 @@ struct SettingsView: View {
 
                 // ACCOUNT
                 Section("Account") {
-                    if isSignedIn {
-                        Text("Signed in as \(storedDisplayName)")
-                        Button("Sign out", role: .destructive) {
-                            isSignedIn = false
-                            storedDisplayName = ""
-                            didChooseLogin = true
+                    if authManager.isAuthenticated {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Signed in with Apple")
+                                .font(.subheadline)
+                            if !authManager.userName.isEmpty {
+                                Text(authManager.userName)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            if !authManager.userEmail.isEmpty {
+                                Text(authManager.userEmail)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        
+                        Button("Sign Out", role: .destructive) {
+                            authManager.signOut()
                         }
                     } else {
-                        Button("Sign in with Apple") {
-                            showAppleSignIn = true
-                        }
+                        Text("Not signed in")
+                            .foregroundStyle(.secondary)
                     }
                 }
 

@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "Gemini-SphereWorkoutLLogo 1.png",
+      "filename" : "Gemini-SphereWorkoutLLogo-noAlpha2.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -13,7 +13,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "Gemini-SphereWorkoutLLogo.png",
+      "filename" : "Gemini-SphereWorkoutLLogo-noAlpha2 1.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
