@@ -92,7 +92,7 @@ struct NewWorkoutView: View {
                             Text(type.rawValue).tag(type)
                         }
                     }
-                    .onChange(of: selectedTemplateType) { _ in
+                    .onChange(of: selectedTemplateType) {
                         // Auto-apply when template type changes
                         applySelectedTemplate()
                     }
@@ -105,7 +105,7 @@ struct NewWorkoutView: View {
                                 Text(day.rawValue).tag(day)
                             }
                         }
-                        .onChange(of: selectedVinayDay) { _ in
+                        .onChange(of: selectedVinayDay) {
                             applySelectedTemplate()
                         }
                     case .ppl:
@@ -114,7 +114,7 @@ struct NewWorkoutView: View {
                                 Text(day.rawValue).tag(day)
                             }
                         }
-                        .onChange(of: selectedPPLDay) { _ in
+                        .onChange(of: selectedPPLDay) {
                             applySelectedTemplate()
                         }
                     case .amariss:
@@ -123,7 +123,7 @@ struct NewWorkoutView: View {
                                 Text(day.rawValue).tag(day)
                             }
                         }
-                        .onChange(of: selectedAmarissDay) { _ in
+                        .onChange(of: selectedAmarissDay) {
                             applySelectedTemplate()
                         }
                     case .broSplit:
@@ -132,7 +132,7 @@ struct NewWorkoutView: View {
                                 Text(day.rawValue).tag(day)
                             }
                         }
-                        .onChange(of: selectedBroSplitDay) { _ in
+                        .onChange(of: selectedBroSplitDay) {
                             applySelectedTemplate()
                         }
                     case .fullBody, .calisthenics:
@@ -171,7 +171,7 @@ struct NewWorkoutView: View {
                     }
 
                     Toggle("Bodyweight only", isOn: $bodyweightOnly)
-                        .onChange(of: bodyweightOnly) { newValue in
+                        .onChange(of: bodyweightOnly) { _, newValue in
                             if newValue {
                                 machinesOnly = false
                                 freeWeightsOnly = false
@@ -179,7 +179,7 @@ struct NewWorkoutView: View {
                         }
                     
                     Toggle("Machines only", isOn: $machinesOnly)
-                        .onChange(of: machinesOnly) { newValue in
+                        .onChange(of: machinesOnly) { _, newValue in
                             if newValue {
                                 bodyweightOnly = false
                                 freeWeightsOnly = false
@@ -187,7 +187,7 @@ struct NewWorkoutView: View {
                         }
                     
                     Toggle("Free weights only", isOn: $freeWeightsOnly)
-                        .onChange(of: freeWeightsOnly) { newValue in
+                        .onChange(of: freeWeightsOnly) { _, newValue in
                             if newValue {
                                 bodyweightOnly = false
                                 machinesOnly = false

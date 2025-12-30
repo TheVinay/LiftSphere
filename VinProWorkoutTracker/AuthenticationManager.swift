@@ -7,6 +7,7 @@ class AuthenticationManager {
     var userID: String = ""
     var userName: String = ""
     var userEmail: String = ""
+    var needsNamePrompt = false
     
     init() {
         loadAuthState()
@@ -17,6 +18,7 @@ class AuthenticationManager {
         userID = ""
         userName = ""
         userEmail = ""
+        needsNamePrompt = false
         saveAuthState()
     }
     
@@ -37,6 +39,22 @@ class AuthenticationManager {
                     userEmail = email
                 }
                 
+                // Check if we got a name from Apple, if not, prompt user
+                if userName.isEmpty {
+                    // Try to extract name from email
+                    if !userEmail.isEmpty {
+                        let emailName = userEmail.components(separatedBy: "@").first ?? ""
+                        userName = emailName.replacingOccurrences(of: ".", with: " ")
+                            .replacingOccurrences(of: "_", with: " ")
+                            .capitalized
+                    }
+                    
+                    // If still empty, we'll need to prompt
+                    if userName.isEmpty {
+                        needsNamePrompt = true
+                    }
+                }
+                
                 isAuthenticated = true
                 saveAuthState()
             }
@@ -45,6 +63,26 @@ class AuthenticationManager {
         }
     }
     
+    func setDisplayName(_ name: String) {
+        userName = name
+        needsNamePrompt = false
+        saveAuthState()
+    }
+    
+    // MARK: - Debug Helper (Simulator Only)
+    
+    #if targetEnvironment(simulator)
+    func debugSkipSignIn() {
+        userID = "simulator-user-\(UUID().uuidString.prefix(8))"
+        userName = "" // Empty so we can test the name prompt
+        userEmail = "simulator@test.com"
+        isAuthenticated = true
+        needsNamePrompt = true // Trigger name prompt
+        saveAuthState()
+        print("✅ DEBUG: Skipped sign-in for simulator")
+    }
+    #endif
+    
     // MARK: - Persistence
     
     private func loadAuthState() {
@@ -52,6 +90,7 @@ class AuthenticationManager {
         userID = UserDefaults.standard.string(forKey: "userID") ?? ""
         userName = UserDefaults.standard.string(forKey: "userName") ?? ""
         userEmail = UserDefaults.standard.string(forKey: "userEmail") ?? ""
+        needsNamePrompt = UserDefaults.standard.bool(forKey: "needsNamePrompt")
     }
     
     private func saveAuthState() {
@@ -59,5 +98,6 @@ class AuthenticationManager {
         UserDefaults.standard.set(userID, forKey: "userID")
         UserDefaults.standard.set(userName, forKey: "userName")
         UserDefaults.standard.set(userEmail, forKey: "userEmail")
+        UserDefaults.standard.set(needsNamePrompt, forKey: "needsNamePrompt")
     }
 }

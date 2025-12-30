@@ -5,33 +5,12 @@
       location = "self:">
    </FileRef>
    <FileRef
-      location = "group:OnboardingView.swift">
+      location = "group:ICLOUD_SYNC_SUMMARY.md">
    </FileRef>
    <FileRef
-      location = "group:PrivacyPolicyView.swift">
+      location = "group:SyncStatusBadge.swift">
    </FileRef>
    <FileRef
-      location = "group:TermsOfServiceView.swift">
-   </FileRef>
-   <FileRef
-      location = "group:RootView.swift">
-   </FileRef>
-   <FileRef
-      location = "group:WorkoutWidget.swift">
-   </FileRef>
-   <FileRef
-      location = "group:WIDGET_SETUP.md">
-   </FileRef>
-   <FileRef
-      location = "group:README.md">
-   </FileRef>
-   <FileRef
-      location = "group:LAUNCH_CHECKLIST.md">
-   </FileRef>
-   <FileRef
-      location = "group:WHATS_NEW_V1.md">
-   </FileRef>
-   <FileRef
-      location = "group:QUICK_SUMMARY.md">
+      location = "group:ICLOUD_SYNC_CHECKLIST.md">
    </FileRef>
 </Workspace>

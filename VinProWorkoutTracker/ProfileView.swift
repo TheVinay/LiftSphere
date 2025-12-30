@@ -17,9 +17,13 @@ struct ProfileView: View {
     @AppStorage("profile.link") private var link: String = ""
     @AppStorage("profile.followers") private var followers: Int = 0
     @AppStorage("profile.following") private var following: Int = 0
+    
+    // AuthenticationManager for Apple ID info
+    @Environment(AuthenticationManager.self) private var authManager
 
     @State private var showEditProfile = false
     @State private var showSettings = false
+    @State private var showHealthStats = false
     
     // Collapsible sections
     @State private var isVolumeCardExpanded = true
@@ -35,7 +39,22 @@ struct ProfileView: View {
             return storedDisplayName
         }
 
-        // 2. Fallback: derive from device name (strip "’s iPhone")
+        // 2. Use auth manager's name if available (from Apple ID)
+        if !authManager.userName.isEmpty {
+            return authManager.userName
+        }
+
+        // 3. Fallback to email if available
+        if !authManager.userEmail.isEmpty {
+            let emailName = authManager.userEmail.components(separatedBy: "@").first ?? ""
+            if !emailName.isEmpty {
+                return emailName.replacingOccurrences(of: ".", with: " ")
+                    .replacingOccurrences(of: "_", with: " ")
+                    .capitalized
+            }
+        }
+
+        // 4. Last resort: derive from device name (strip "'s iPhone")
         let device = UIDevice.current.name
         if let range = device.range(of: "'s ") {
             return String(device[..<range.lowerBound])
@@ -148,6 +167,41 @@ struct ProfileView: View {
 
                     // PROFILE ANALYTICS CARDS
                     VStack(spacing: 16) {
+                        // Health Stats Button
+                        Button {
+                            showHealthStats = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "heart.text.square.fill")
+                                    .font(.title2)
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [.red, .pink],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Health Stats")
+                                        .font(.headline)
+                                    Text("View body composition & activity")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "chevron.right")
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding()
+                            .background(Color(.systemBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+                        }
+                        .buttonStyle(.plain)
+                        
                         // Volume Card - Collapsible
                         collapsibleCard(
                             title: "Last 30 Days Volume",
@@ -211,6 +265,9 @@ struct ProfileView: View {
             }
             .sheet(isPresented: $showSettings) {
                 SettingsView()
+            }
+            .sheet(isPresented: $showHealthStats) {
+                HealthStatsView()
             }
         }
     }

@@ -8,6 +8,8 @@ struct SettingsView: View {
     
     @Query(sort: \Workout.date, order: .reverse)
     private var workouts: [Workout]
+    
+    @State private var syncMonitor = CloudKitSyncMonitor()
 
     private enum Appearance: Int, CaseIterable, Identifiable {
         case system = 0
@@ -99,6 +101,50 @@ struct SettingsView: View {
                         Text("Not signed in")
                             .foregroundStyle(.secondary)
                     }
+                }
+                
+                // iCLOUD SYNC
+                Section {
+                    HStack {
+                        Image(systemName: syncMonitor.statusIcon)
+                            .foregroundStyle(syncMonitor.statusColor)
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("iCloud Sync")
+                                .font(.subheadline)
+                            Text(syncMonitor.statusText)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        if syncMonitor.syncStatus == .syncing {
+                            ProgressView()
+                        }
+                    }
+                    
+                    if syncMonitor.syncStatus == .notSignedIn {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Sign in to iCloud")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            
+                            Text("Go to Settings > [Your Name] > iCloud to sign in. Your workout data will automatically sync across all your devices.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    
+                    Button {
+                        syncMonitor.checkAccountStatus()
+                    } label: {
+                        Label("Check Sync Status", systemImage: "arrow.clockwise")
+                    }
+                } header: {
+                    Text("Data & Sync")
+                } footer: {
+                    Text("Your workouts are automatically backed up to iCloud and synced across your devices.")
                 }
 
                 // APPEARANCE
