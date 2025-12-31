@@ -15,6 +15,9 @@ struct LearnView: View {
     @State private var isRecentlyUsedExpanded = true
     @State private var expandedMuscleGroups: Set<MuscleGroup> = []
     
+    // Help sheet
+    @State private var showHelp = false
+    
     // Query for recent exercises
     @Query(sort: \SetEntry.timestamp, order: .reverse)
     private var allSets: [SetEntry]
@@ -156,6 +159,20 @@ struct LearnView: View {
             }
             .navigationTitle("LiftSphere Workout")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showHelp = true
+                    } label: {
+                        Image(systemName: "questionmark.circle")
+                            .font(.body)
+                    }
+                    .accessibilityLabel("Help & Guide")
+                }
+            }
+            .sheet(isPresented: $showHelp) {
+                HelpView()
+            }
             .onAppear {
                 loadFavorites()
             }

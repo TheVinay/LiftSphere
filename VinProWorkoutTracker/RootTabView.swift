@@ -19,6 +19,11 @@ struct RootTabView: View {
                     Label("Analytics", systemImage: "chart.bar.xaxis")
                 }
 
+            FriendsView()
+                .tabItem {
+                    Label("Friends", systemImage: "person.2.fill")
+                }
+
             LearnView()
                 .tabItem {
                     Label("Learn", systemImage: "book.closed")

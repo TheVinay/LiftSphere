@@ -69,6 +69,13 @@ struct ExerciseTemplate {
     let lowBackSafe: Bool
 }
 
+struct ExerciseDetail {
+    let name: String
+    let primaryMuscles: [String]
+    let instructions: [String]
+    let formTips: [String]
+}
+
 // MARK: - Exercise Library
 
 struct ExerciseLibrary {
@@ -130,9 +137,35 @@ struct ExerciseLibrary {
         .init(name: "Cable Fly", muscleGroup: .chest, equipment: .cable, isCalisthenic: false, lowBackSafe: true),
         .init(name: "Plank to Push-Up", muscleGroup: .core, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
         
-        // ADD YOUR NEW EXERCISES HERE
-        // Example format:
-        // .init(name: "Exercise Name", muscleGroup: .chest, equipment: .dumbbell, isCalisthenic: false, lowBackSafe: true),
+        // ADDITIONAL EXERCISES - Chest
+        .init(name: "Bench Press", muscleGroup: .chest, equipment: .barbell, isCalisthenic: false, lowBackSafe: true),
+        
+        // ADDITIONAL EXERCISES - Shoulders
+        .init(name: "Dumbbell Shrugs", muscleGroup: .shoulders, equipment: .dumbbell, isCalisthenic: false, lowBackSafe: true),
+        .init(name: "Overhead Press", muscleGroup: .shoulders, equipment: .barbell, isCalisthenic: false, lowBackSafe: true),
+        .init(name: "Pike Push-Up", muscleGroup: .shoulders, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
+        
+        // ADDITIONAL EXERCISES - Back
+        .init(name: "Bent Over Row", muscleGroup: .back, equipment: .barbell, isCalisthenic: false, lowBackSafe: false),
+        .init(name: "Deadlift", muscleGroup: .back, equipment: .barbell, isCalisthenic: false, lowBackSafe: false),
+        
+        // ADDITIONAL EXERCISES - Arms
+        .init(name: "Suspension Bicep Curl", muscleGroup: .arms, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
+        
+        // ADDITIONAL EXERCISES - Legs
+        .init(name: "Barbell Squat", muscleGroup: .legs, equipment: .barbell, isCalisthenic: false, lowBackSafe: false),
+        .init(name: "Assisted Pistol Squat", muscleGroup: .legs, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
+        .init(name: "Lateral Lunge", muscleGroup: .legs, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
+        
+        // ADDITIONAL EXERCISES - Glutes
+        .init(name: "Hip Thrust", muscleGroup: .glutes, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
+        .init(name: "Single Leg Glute Bridge", muscleGroup: .glutes, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
+        .init(name: "Nordic Hamstring Curl", muscleGroup: .glutes, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
+        
+        // ADDITIONAL EXERCISES - Core
+        .init(name: "Superman", muscleGroup: .core, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
+        .init(name: "Mountain Climber", muscleGroup: .core, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
+        .init(name: "Burpee", muscleGroup: .core, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
     ]
 
     static func forMode(_ mode: WorkoutMode,

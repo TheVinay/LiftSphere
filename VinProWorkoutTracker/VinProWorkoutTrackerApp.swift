@@ -12,16 +12,41 @@ struct VinProWorkoutTrackerApp: App {
 
     let sharedModelContainer: ModelContainer = {
         let schema = Schema([Workout.self, SetEntry.self])
-        let modelConfiguration = ModelConfiguration(
+        
+        // Try with CloudKit first
+        let cloudConfig = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
             cloudKitDatabase: .automatic
         )
         
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            return try ModelContainer(for: schema, configurations: [cloudConfig])
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            print("⚠️ Failed to initialize ModelContainer with CloudKit: \(error)")
+            
+            // Fallback to local-only storage
+            do {
+                let localConfig = ModelConfiguration(
+                    schema: schema,
+                    isStoredInMemoryOnly: false,
+                    cloudKitDatabase: .none
+                )
+                print("✅ Using local-only storage as fallback")
+                return try ModelContainer(for: schema, configurations: [localConfig])
+            } catch {
+                // Last resort: in-memory storage
+                print("❌ Critical: Falling back to in-memory storage: \(error)")
+                do {
+                    let memoryConfig = ModelConfiguration(
+                        schema: schema,
+                        isStoredInMemoryOnly: true
+                    )
+                    return try ModelContainer(for: schema, configurations: [memoryConfig])
+                } catch {
+                    fatalError("Could not create ModelContainer even with in-memory storage: \(error)")
+                }
+            }
         }
     }()
 

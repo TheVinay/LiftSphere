@@ -5,12 +5,12 @@
       location = "self:">
    </FileRef>
    <FileRef
-      location = "group:ICLOUD_SYNC_SUMMARY.md">
+      location = "group:HelpView.swift">
    </FileRef>
    <FileRef
-      location = "group:SyncStatusBadge.swift">
+      location = "group:HELP_CONTENT_GUIDE.md">
    </FileRef>
    <FileRef
-      location = "group:ICLOUD_SYNC_CHECKLIST.md">
+      location = "group:COMPLETE_FEATURE_LIST.md">
    </FileRef>
 </Workspace>

@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftUI
 import SwiftData
 
 struct WorkoutDetailView: View {
@@ -11,6 +12,8 @@ struct WorkoutDetailView: View {
     
     @State private var showingRenameSheet = false
     @State private var pdfToShare: Data?
+    @State private var showingSocialShare = false
+    @State private var shareSuccess = false
 
     var body: some View {
         List {
@@ -74,6 +77,12 @@ struct WorkoutDetailView: View {
                     } label: {
                         Label("Share as PDF", systemImage: "square.and.arrow.up")
                     }
+                    
+                    Button {
+                        showingSocialShare = true
+                    } label: {
+                        Label("Share to Friends", systemImage: "person.2.fill")
+                    }
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
@@ -87,6 +96,21 @@ struct WorkoutDetailView: View {
             set: { pdfToShare = $0?.data }
         )) { item in
             ShareSheet(items: [item.fileURL])
+        }
+        .confirmationDialog("Share Workout", isPresented: $showingSocialShare) {
+            Button("Share to Friends") {
+                Task {
+                    await shareToFriends()
+                }
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Share this workout with your friends?")
+        }
+        .alert("Workout Shared!", isPresented: $shareSuccess) {
+            Button("OK") { }
+        } message: {
+            Text("Your workout has been shared with friends.")
         }
         .onDisappear {
             // Persist any edits to plan
@@ -134,6 +158,16 @@ struct WorkoutDetailView: View {
             pdfToShare = pdfData
         } catch {
             print("Failed to create PDF: \(error)")
+        }
+    }
+    
+    private func shareToFriends() async {
+        let socialService = SocialService()
+        do {
+            try await socialService.shareWorkout(workout)
+            shareSuccess = true
+        } catch {
+            print("Failed to share workout: \(error)")
         }
     }
 }

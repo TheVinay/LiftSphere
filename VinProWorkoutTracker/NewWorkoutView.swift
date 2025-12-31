@@ -38,6 +38,8 @@ struct NewWorkoutView: View {
         case ppl = "Push/Pull/Legs (PPL)"
         case amariss = "Amariss Personal Trainer"
         case broSplit = "Bro Split"
+        case stronglifts = "StrongLifts 5×5"
+        case madcow = "Madcow 5×5"
         case fullBody = "Full Body"
         case calisthenics = "Calisthenics"
         case custom = "Custom"
@@ -75,12 +77,27 @@ struct NewWorkoutView: View {
         case arms = "Arm Day"
         var id: Self { self }
     }
+    
+    private enum StrongLiftsDay: String, CaseIterable, Identifiable {
+        case workoutA = "Workout A"
+        case workoutB = "Workout B"
+        var id: Self { self }
+    }
+    
+    private enum MadcowDay: String, CaseIterable, Identifiable {
+        case mondayVolume = "Monday (Volume Day)"
+        case wednesdayLight = "Wednesday (Light Day)"
+        case fridayIntensity = "Friday (Intensity Day)"
+        var id: Self { self }
+    }
 
     @State private var selectedTemplateType: TemplateType = .vinay
     @State private var selectedVinayDay: VinayDay = .push
     @State private var selectedPPLDay: PPLDay = .push
     @State private var selectedAmarissDay: AmarissDay = .day1
     @State private var selectedBroSplitDay: BroSplitDay = .chest
+    @State private var selectedStrongLiftsDay: StrongLiftsDay = .workoutA
+    @State private var selectedMadcowDay: MadcowDay = .mondayVolume
 
     var body: some View {
         NavigationStack {
@@ -133,6 +150,24 @@ struct NewWorkoutView: View {
                             }
                         }
                         .onChange(of: selectedBroSplitDay) {
+                            applySelectedTemplate()
+                        }
+                    case .stronglifts:
+                        Picker("Workout", selection: $selectedStrongLiftsDay) {
+                            ForEach(StrongLiftsDay.allCases) { day in
+                                Text(day.rawValue).tag(day)
+                            }
+                        }
+                        .onChange(of: selectedStrongLiftsDay) {
+                            applySelectedTemplate()
+                        }
+                    case .madcow:
+                        Picker("Day", selection: $selectedMadcowDay) {
+                            ForEach(MadcowDay.allCases) { day in
+                                Text(day.rawValue).tag(day)
+                            }
+                        }
+                        .onChange(of: selectedMadcowDay) {
                             applySelectedTemplate()
                         }
                     case .fullBody, .calisthenics:
@@ -302,6 +337,10 @@ struct NewWorkoutView: View {
             applyAmarissTemplate(selectedAmarissDay)
         case .broSplit:
             applyBroSplitTemplate(selectedBroSplitDay)
+        case .stronglifts:
+            applyStrongLiftsTemplate(selectedStrongLiftsDay)
+        case .madcow:
+            applyMadcowTemplate(selectedMadcowDay)
         case .fullBody:
             applyFullBodyTemplate()
         case .calisthenics:
@@ -327,7 +366,7 @@ struct NewWorkoutView: View {
             mode = .full
         case .calisthenics:
             mode = .calisthenics
-        case .amariss, .broSplit:
+        case .amariss, .broSplit, .stronglifts, .madcow:
             // Already handled by templates
             return
         }
@@ -790,6 +829,138 @@ struct NewWorkoutView: View {
             )
 
             workoutName = defaultName(for: "Arm Day")
+        }
+    }
+    
+    // MARK: - StrongLifts 5×5 Templates
+    
+    private func applyStrongLiftsTemplate(_ day: StrongLiftsDay) {
+        func find(_ names: [String]) -> [ExerciseTemplate] {
+            ExerciseLibrary.all.filter { names.contains($0.name) }
+        }
+
+        let stretches = [
+            "Hip flexor stretch",
+            "Quad stretch",
+            "Hamstring stretch"
+        ]
+
+        switch day {
+        case .workoutA:
+            let main = find([
+                "Barbell Squat",
+                "Bench Press",
+                "Bent Over Row"
+            ])
+
+            generatedPlan = GeneratedWorkoutPlan(
+                name: "StrongLifts 5×5 - Workout A",
+                mainExercises: main,
+                coreExercises: [],
+                stretches: stretches,
+                warmupMinutes: Int(warmupMinutes),
+                coreMinutes: 0,
+                stretchMinutes: Int(stretchMinutes)
+            )
+
+            workoutName = "StrongLifts 5×5 - Workout A"
+            workoutNotes = "5 sets × 5 reps for each exercise. Add 5 lbs (2.5kg) each workout if you complete all sets."
+
+        case .workoutB:
+            let main = find([
+                "Barbell Squat",
+                "Overhead Press",
+                "Deadlift"
+            ])
+
+            generatedPlan = GeneratedWorkoutPlan(
+                name: "StrongLifts 5×5 - Workout B",
+                mainExercises: main,
+                coreExercises: [],
+                stretches: stretches,
+                warmupMinutes: Int(warmupMinutes),
+                coreMinutes: 0,
+                stretchMinutes: Int(stretchMinutes)
+            )
+
+            workoutName = "StrongLifts 5×5 - Workout B"
+            workoutNotes = "Squat & Overhead Press: 5×5. Deadlift: 1×5 (only one heavy set). Add 5 lbs (2.5kg) each workout."
+        }
+    }
+    
+    // MARK: - Madcow 5×5 Templates
+    
+    private func applyMadcowTemplate(_ day: MadcowDay) {
+        func find(_ names: [String]) -> [ExerciseTemplate] {
+            ExerciseLibrary.all.filter { names.contains($0.name) }
+        }
+
+        let stretches = [
+            "Hip flexor stretch",
+            "Quad stretch",
+            "Hamstring stretch"
+        ]
+
+        switch day {
+        case .mondayVolume:
+            let main = find([
+                "Barbell Squat",
+                "Bench Press",
+                "Bent Over Row"
+            ])
+
+            generatedPlan = GeneratedWorkoutPlan(
+                name: "Madcow 5×5 - Monday (Volume Day)",
+                mainExercises: main,
+                coreExercises: [],
+                stretches: stretches,
+                warmupMinutes: Int(warmupMinutes),
+                coreMinutes: 0,
+                stretchMinutes: Int(stretchMinutes)
+            )
+
+            workoutName = "Madcow 5×5 - Monday (Volume)"
+            workoutNotes = "5×5 ramping sets (12.5%, 25%, 50%, 75%, 100% of 5RM). Week-to-week progression."
+
+        case .wednesdayLight:
+            let main = find([
+                "Barbell Squat",
+                "Overhead Press",
+                "Deadlift"
+            ])
+
+            generatedPlan = GeneratedWorkoutPlan(
+                name: "Madcow 5×5 - Wednesday (Light Day)",
+                mainExercises: main,
+                coreExercises: [],
+                stretches: stretches,
+                warmupMinutes: Int(warmupMinutes),
+                coreMinutes: 0,
+                stretchMinutes: Int(stretchMinutes)
+            )
+
+            workoutName = "Madcow 5×5 - Wednesday (Light)"
+            workoutNotes = "4×5 at 80% of Monday's weight. Recovery day - lighter volume."
+
+        case .fridayIntensity:
+            let main = find([
+                "Barbell Squat",
+                "Bench Press",
+                "Deadlift"
+            ])
+
+            generatedPlan = GeneratedWorkoutPlan(
+                name: "Madcow 5×5 - Friday (Intensity Day)",
+                mainExercises: main,
+                coreExercises: [],
+                stretches: stretches,
+                warmupMinutes: Int(warmupMinutes),
+                coreMinutes: 0,
+                stretchMinutes: Int(stretchMinutes)
+            )
+
+            workoutName = "Madcow 5×5 - Friday (Intensity)"
+            workoutNotes = "4×5 ramping sets, then 1×3 at new PR weight (105% of Monday). Top set should be a new 3RM."
         }
     }
     

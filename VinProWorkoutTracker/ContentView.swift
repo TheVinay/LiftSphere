@@ -17,14 +17,19 @@ struct ContentView: View {
     @State private var showingQuickRepeat = false
     @State private var selectedWorkoutToRepeat: Workout?
 
+    // Bulk selection
+    @State private var isSelecting = false
+    @State private var selectedWorkouts: Set<Workout.ID> = []
     
     // Export / import
     @State private var shareItem: ShareItem?
     @State private var isImporting = false
     @State private var importError: String?
+    @State private var importSuccess: Int?
 
     // Delete confirmation
     @State private var pendingDelete: Workout?
+    @State private var showingBulkDeleteConfirmation = false
 
     private var visibleWorkouts: [Workout] {
         showArchivedWorkouts ? workouts : workouts.filter { !$0.isArchived }
@@ -41,14 +46,105 @@ struct ContentView: View {
             }
             .navigationTitle("Workouts")
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showingNewWorkout = true
-                    } label: {
-                        Image(systemName: "plus")
+                ToolbarItem(placement: .navigationBarLeading) {
+                    if isSelecting {
+                        Menu {
+                            Button {
+                                selectAll()
+                            } label: {
+                                Label("Select All", systemImage: "checkmark.circle")
+                            }
+                            
+                            Button {
+                                deselectAll()
+                            } label: {
+                                Label("Deselect All", systemImage: "circle")
+                            }
+                            
+                            Divider()
+                            
+                            Button("Cancel", role: .cancel) {
+                                isSelecting = false
+                                selectedWorkouts.removeAll()
+                            }
+                        } label: {
+                            Text("Edit")
+                        }
+                    } else {
+                        Menu {
+                            Button {
+                                isImporting = true
+                            } label: {
+                                Label("Import Workouts", systemImage: "square.and.arrow.down")
+                            }
+                            
+                            Button {
+                                exportAllWorkouts()
+                            } label: {
+                                Label("Export All", systemImage: "square.and.arrow.up")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                        }
                     }
-                    .accessibilityLabel("Add Workout")
                 }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    if !visibleWorkouts.isEmpty {
+                        Button(isSelecting ? "Done" : "Select") {
+                            isSelecting.toggle()
+                            if !isSelecting {
+                                selectedWorkouts.removeAll()
+                            }
+                        }
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    if !isSelecting {
+                        Button {
+                            showingNewWorkout = true
+                        } label: {
+                            Image(systemName: "plus")
+                        }
+                        .accessibilityLabel("Add Workout")
+                    }
+                }
+            }
+            .safeAreaInset(edge: .bottom) {
+                if isSelecting && !selectedWorkouts.isEmpty {
+                    bulkActionsToolbar
+                }
+            }
+            .fileImporter(
+                isPresented: $isImporting,
+                allowedContentTypes: [.json],
+                allowsMultipleSelection: false
+            ) { result in
+                handleImport(result: result)
+            }
+            .alert("Import Error", isPresented: Binding(
+                get: { importError != nil },
+                set: { if !$0 { importError = nil } }
+            )) {
+                Button("OK") { importError = nil }
+            } message: {
+                if let error = importError {
+                    Text(error)
+                }
+            }
+            .alert("Import Successful", isPresented: Binding(
+                get: { importSuccess != nil },
+                set: { if !$0 { importSuccess = nil } }
+            )) {
+                Button("OK") { importSuccess = nil }
+            } message: {
+                if let count = importSuccess {
+                    Text("Successfully imported \(count) workout\(count == 1 ? "" : "s")")
+                }
+            }
+            .sheet(item: $shareItem) { item in
+                ActivityView(activityItems: [item.url])
             }
             .sheet(isPresented: $showingNewWorkout) {
                 NewWorkoutView()
@@ -81,6 +177,76 @@ struct ContentView: View {
             } message: {
                 Text("This workout will be permanently deleted.")
             }
+            .alert("Delete \(selectedWorkouts.count) Workouts?",
+                   isPresented: $showingBulkDeleteConfirmation
+            ) {
+                Button("Delete", role: .destructive) {
+                    bulkDeleteSelected()
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("These workouts will be permanently deleted.")
+            }
+        }
+    }
+    
+    // MARK: - Bulk Actions Toolbar
+    
+    private var bulkActionsToolbar: some View {
+        VStack(spacing: 0) {
+            Divider()
+            
+            VStack(spacing: 8) {
+                Text("\(selectedWorkouts.count) Selected")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                
+                HStack(spacing: 24) {
+                    Button {
+                        bulkArchiveSelected()
+                    } label: {
+                        VStack(spacing: 4) {
+                            Image(systemName: "archivebox")
+                                .font(.title3)
+                            Text("Archive")
+                                .font(.caption)
+                        }
+                    }
+                    .disabled(selectedWorkouts.isEmpty)
+                    
+                    Button {
+                        bulkUnarchiveSelected()
+                    } label: {
+                        VStack(spacing: 4) {
+                            Image(systemName: "tray.and.arrow.up")
+                                .font(.title3)
+                            Text("Unarchive")
+                                .font(.caption)
+                        }
+                    }
+                    .disabled(selectedWorkouts.isEmpty)
+                    
+                    Spacer()
+                    
+                    Button(role: .destructive) {
+                        if confirmBeforeDelete {
+                            showingBulkDeleteConfirmation = true
+                        } else {
+                            bulkDeleteSelected()
+                        }
+                    } label: {
+                        VStack(spacing: 4) {
+                            Image(systemName: "trash")
+                                .font(.title3)
+                            Text("Delete")
+                                .font(.caption)
+                        }
+                    }
+                    .disabled(selectedWorkouts.isEmpty)
+                }
+            }
+            .padding()
+            .background(Color(.systemBackground))
         }
     }
     
@@ -241,81 +407,105 @@ struct ContentView: View {
 
     @ViewBuilder
     private func workoutRow(_ workout: Workout) -> some View {
-        NavigationLink {
-            WorkoutDetailView(workout: workout)
-        } label: {
-            HStack(alignment: .top) {
+        let isSelected = selectedWorkouts.contains(workout.id)
+        
+        HStack(spacing: 12) {
+            // Selection circle (like Mail app)
+            if isSelecting {
+                Button {
+                    toggleSelection(for: workout)
+                } label: {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .foregroundColor(isSelected ? .blue : .gray)
+                        .font(.title3)
+                }
+                .buttonStyle(.plain)
+            }
+            
+            NavigationLink {
+                WorkoutDetailView(workout: workout)
+            } label: {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(workout.name)
+                            .font(.headline)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(workout.name)
-                        .font(.headline)
-
-                    Text(workout.date.formatted(date: .abbreviated, time: .omitted))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-
-                    if workout.totalVolume > 0 {
-                        Text("Volume \(Int(workout.totalVolume))")
-                            .font(.caption)
+                        Text(workout.date.formatted(date: .abbreviated, time: .omitted))
+                            .font(.subheadline)
                             .foregroundStyle(.secondary)
+
+                        if workout.totalVolume > 0 {
+                            Text("Volume \(Int(workout.totalVolume))")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    Spacer()
+
+                    if workout.isCompleted {
+                        Text("✓")
+                            .font(.caption2.bold())
+                            .padding(6)
+                            .background(
+                                Capsule()
+                                    .fill(Color.green.opacity(0.15))
+                            )
+                            .foregroundColor(.green)
+                    }
+                }
+                .opacity(workout.isArchived ? 0.45 : 1.0)
+            }
+            .disabled(isSelecting)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if isSelecting {
+                toggleSelection(for: workout)
+            }
+        }
+
+        // Swipe actions only when NOT in selection mode
+        .if(!isSelecting) { view in
+            view
+                // 👉 RIGHT SWIPE (Complete / Duplicate / Delete)
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    Button {
+                        toggleCompleted(workout)
+                    } label: {
+                        Label(
+                            workout.isCompleted ? "Undo" : "Complete",
+                            systemImage: workout.isCompleted ? "arrow.uturn.backward" : "checkmark"
+                        )
+                    }
+                    .tint(.green)
+
+                    Button {
+                        repeatWorkout(workout)
+                    } label: {
+                        Label("Duplicate", systemImage: "doc.on.doc")
+                    }
+                    .tint(.blue)
+
+                    Button(role: .destructive) {
+                        handleDelete(workout)
+                    } label: {
+                        Label("Delete", systemImage: "trash")
                     }
                 }
 
-                Spacer()
-
-                if workout.isCompleted {
-                    Text("✓")
-                        .font(.caption2.bold())
-                        .padding(6)
-                        .background(
-                            Capsule()
-                                .fill(Color.green.opacity(0.15))
+                // 👉 LEFT SWIPE (Archive / Unarchive)
+                .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                    Button {
+                        toggleArchive(workout)
+                    } label: {
+                        Label(
+                            workout.isArchived ? "Unarchive" : "Archive",
+                            systemImage: workout.isArchived ? "tray.and.arrow.up" : "archivebox"
                         )
-                        .foregroundColor(.green)
+                    }
+                    .tint(.gray)
                 }
-            }
-            .opacity(workout.isArchived ? 0.45 : 1.0)
-        }
-
-        // 👉 RIGHT SWIPE (Complete / Duplicate / Delete)
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-
-            Button {
-                toggleCompleted(workout)
-            } label: {
-                Label(
-                    workout.isCompleted ? "Undo" : "Complete",
-                    systemImage: workout.isCompleted ? "arrow.uturn.backward" : "checkmark"
-                )
-            }
-            .tint(.green)
-
-            Button {
-                repeatWorkout(workout)
-            } label: {
-                Label("Duplicate", systemImage: "doc.on.doc")
-            }
-            .tint(.blue)
-
-            Button(role: .destructive) {
-                handleDelete(workout)
-            } label: {
-                Label("Delete", systemImage: "trash")
-            }
-        }
-
-        // 👉 LEFT SWIPE (Archive / Unarchive)
-        .swipeActions(edge: .leading, allowsFullSwipe: false) {
-
-            Button {
-                toggleArchive(workout)
-            } label: {
-                Label(
-                    workout.isArchived ? "Unarchive" : "Archive",
-                    systemImage: workout.isArchived ? "tray.and.arrow.up" : "archivebox"
-                )
-            }
-            .tint(.gray)
         }
     }
 
@@ -368,6 +558,156 @@ struct ContentView: View {
 
     private func shareSingleWorkout(_ workout: Workout) {
         // unchanged – uses WorkoutExportSupport
+    }
+    
+    // MARK: - Import/Export
+    
+    private func exportAllWorkouts() {
+        do {
+            let fileURL = try ExportManager.createExportFile(
+                workouts: workouts,
+                format: .json
+            )
+            shareItem = ShareItem(url: fileURL)
+        } catch {
+            importError = "Export failed: \(error.localizedDescription)"
+        }
+    }
+    
+    private func handleImport(result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            
+            do {
+                // Read the file
+                let data = try Data(contentsOf: url)
+                
+                // Decode JSON
+                let decoder = JSONDecoder()
+                decoder.dateDecodingStrategy = .iso8601
+                let exportFile = try decoder.decode(WorkoutExportFile.self, from: data)
+                
+                // Import workouts
+                var importedCount = 0
+                for exportedWorkout in exportFile.workouts {
+                    let workout = Workout(
+                        date: exportedWorkout.date,
+                        name: exportedWorkout.name,
+                        warmupMinutes: exportedWorkout.warmupMinutes,
+                        coreMinutes: exportedWorkout.coreMinutes,
+                        stretchMinutes: exportedWorkout.stretchMinutes,
+                        mainExercises: exportedWorkout.mainExercises,
+                        coreExercises: exportedWorkout.coreExercises,
+                        stretches: exportedWorkout.stretches
+                    )
+                    
+                    // Import sets
+                    for exportedSet in exportedWorkout.sets {
+                        let setEntry = SetEntry(
+                            exerciseName: exportedSet.exerciseName,
+                            weight: exportedSet.weight,
+                            reps: exportedSet.reps,
+                            timestamp: exportedSet.timestamp
+                        )
+                        workout.sets.append(setEntry)
+                    }
+                    
+                    context.insert(workout)
+                    importedCount += 1
+                }
+                
+                try context.save()
+                
+                // Show success message
+                let generator = UINotificationFeedbackGenerator()
+                generator.notificationOccurred(.success)
+                
+                importSuccess = importedCount
+                
+            } catch {
+                importError = "Failed to import: \(error.localizedDescription)"
+            }
+            
+        case .failure(let error):
+            importError = "Failed to read file: \(error.localizedDescription)"
+        }
+    }
+    
+    // MARK: - Bulk Selection Actions
+    
+    private func toggleSelection(for workout: Workout) {
+        if selectedWorkouts.contains(workout.id) {
+            selectedWorkouts.remove(workout.id)
+        } else {
+            selectedWorkouts.insert(workout.id)
+        }
+    }
+    
+    private func selectAll() {
+        selectedWorkouts = Set(visibleWorkouts.map { $0.id })
+    }
+    
+    private func deselectAll() {
+        selectedWorkouts.removeAll()
+    }
+    
+    private func bulkArchiveSelected() {
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+        
+        for workout in visibleWorkouts where selectedWorkouts.contains(workout.id) {
+            workout.isArchived = true
+        }
+        
+        try? context.save()
+        
+        // Exit selection mode
+        isSelecting = false
+        selectedWorkouts.removeAll()
+    }
+    
+    private func bulkUnarchiveSelected() {
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+        
+        for workout in visibleWorkouts where selectedWorkouts.contains(workout.id) {
+            workout.isArchived = false
+        }
+        
+        try? context.save()
+        
+        // Exit selection mode
+        isSelecting = false
+        selectedWorkouts.removeAll()
+    }
+    
+    private func bulkDeleteSelected() {
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.warning)
+        
+        for workout in visibleWorkouts where selectedWorkouts.contains(workout.id) {
+            context.delete(workout)
+        }
+        
+        try? context.save()
+        
+        // Exit selection mode
+        isSelecting = false
+        selectedWorkouts.removeAll()
+    }
+}
+
+// MARK: - View Extension for Conditional Modifiers
+
+extension View {
+    @ViewBuilder
+    func `if`<Transform: View>(_ condition: Bool, transform: (Self) -> Transform) -> some View {
+        if condition {
+            transform(self)
+        } else {
+            self
+        }
     }
 }
 // MARK: - Quick Repeat Sheet

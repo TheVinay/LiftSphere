@@ -76,34 +76,60 @@ struct ExerciseInfoView: View {
 
     private var aboutView: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 16) {
                 Text(exerciseName)
-                    .font(.title3)
+                    .font(.title2)
                     .bold()
 
-                Text("Primary muscles")
-                    .font(.headline)
+                // Primary muscles
+                if let muscles = ExerciseDatabase.primaryMuscles(for: exerciseName) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Primary Muscles")
+                            .font(.headline)
+                        Text(muscles)
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                    }
+                    
+                    Divider()
+                }
 
-                Text("We can map this exercise to a primary muscle group later (chest, back, etc.).")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                // Instructions
+                if let instructions = ExerciseDatabase.instructions(for: exerciseName) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("How to Perform")
+                            .font(.headline)
+                        
+                        ForEach(Array(instructions.enumerated()), id: \.offset) { index, instruction in
+                            HStack(alignment: .top, spacing: 8) {
+                                Text("\(index + 1).")
+                                    .font(.body)
+                                    .foregroundStyle(.secondary)
+                                Text(instruction)
+                                    .font(.body)
+                            }
+                        }
+                    }
+                    
+                    Divider()
+                }
 
-                Divider()
-
-                Text("Form tips")
-                    .font(.headline)
-
-                Text("• Keep movements controlled.\n• Avoid excessive arching or rounding in your lower back.\n• Focus on full range of motion without pain.\n• Stop if you feel sharp pain or discomfort, especially in your spine.")
-                    .font(.caption)
-
-                Divider()
-
-                Text("Notes")
-                    .font(.headline)
-
-                Text("In a future version, we can add per-exercise notes, video, or diagrams. For now this gives basic guidance and pulls your real stats in the other tabs.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                // Form tips
+                if let tips = ExerciseDatabase.formTips(for: exerciseName) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Form Tips")
+                            .font(.headline)
+                        
+                        ForEach(tips, id: \.self) { tip in
+                            HStack(alignment: .top, spacing: 8) {
+                                Text("•")
+                                    .font(.body)
+                                Text(tip)
+                                    .font(.body)
+                            }
+                        }
+                    }
+                }
             }
             .padding()
         }
@@ -211,7 +237,7 @@ struct ExerciseInfoView: View {
         }.max()
 
         return List {
-            Section("Personal records") {
+            Section("Personal Records") {
                 HStack {
                     Text("Heaviest weight")
                     Spacer()
@@ -242,12 +268,6 @@ struct ExerciseInfoView: View {
                         Text("N/A").foregroundStyle(.secondary)
                     }
                 }
-            }
-
-            Section("Rep records (preview idea)") {
-                Text("Later we can show a table of best sets per rep count, similar to your screenshot.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
         }
     }
