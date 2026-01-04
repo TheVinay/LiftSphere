@@ -95,7 +95,13 @@ class HealthKitManager {
             HKQuantityType(.dietaryEnergyConsumed),
         ]
         
-        try await healthStore.requestAuthorization(toShare: [], read: typesToRead)
+        // Types to write (workouts and calories)
+        let typesToWrite: Set<HKSampleType> = [
+            HKWorkoutType.workoutType(),
+            HKQuantityType(.activeEnergyBurned)
+        ]
+        
+        try await healthStore.requestAuthorization(toShare: typesToWrite, read: typesToRead)
         isAuthorized = true
     }
     
@@ -340,6 +346,61 @@ class HealthKitManager {
         case 25..<30: return "Overweight"
         default: return "Obese"
         }
+    }
+    
+    // MARK: - Write Workout to Health
+    
+    /// Saves a completed workout to Apple Health
+    func saveWorkout(
+        name: String,
+        startDate: Date,
+        duration: TimeInterval,
+        totalVolume: Double
+    ) async throws {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            throw HealthKitError.notAvailable
+        }
+        
+        // Calculate estimated calories burned
+        // Conservative estimate: 0.04 calories per kg of volume lifted
+        let estimatedCalories = totalVolume * 0.04
+        
+        let endDate = startDate.addingTimeInterval(duration)
+        
+        // Create workout builder configuration
+        let workoutConfiguration = HKWorkoutConfiguration()
+        workoutConfiguration.activityType = .traditionalStrengthTraining
+        workoutConfiguration.locationType = .indoor
+        
+        // Create workout builder
+        let builder = HKWorkoutBuilder(
+            healthStore: healthStore,
+            configuration: workoutConfiguration,
+            device: .local()
+        )
+        
+        // Begin workout session
+        try await builder.beginCollection(at: startDate)
+        
+        // Add energy burned sample
+        let energyQuantity = HKQuantity(unit: .kilocalorie(), doubleValue: estimatedCalories)
+        let energySample = HKQuantitySample(
+            type: HKQuantityType(.activeEnergyBurned),
+            quantity: energyQuantity,
+            start: startDate,
+            end: endDate
+        )
+        try await builder.addSamples([energySample])
+        
+        // Add metadata
+        try await builder.addMetadata([
+            HKMetadataKeyIndoorWorkout: true,
+            "WorkoutName": name
+        ])
+        
+        // End collection and finish workout
+        try await builder.endCollection(at: endDate)
+        try await builder.finishWorkout()
     }
 }
 

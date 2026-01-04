@@ -5,12 +5,6 @@
       location = "self:">
    </FileRef>
    <FileRef
-      location = "group:HelpView.swift">
-   </FileRef>
-   <FileRef
-      location = "group:HELP_CONTENT_GUIDE.md">
-   </FileRef>
-   <FileRef
-      location = "group:COMPLETE_FEATURE_LIST.md">
+      location = "group:FIX_CLOUDKIT_CONTAINER_ERROR.md">
    </FileRef>
 </Workspace>

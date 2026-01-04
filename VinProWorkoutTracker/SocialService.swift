@@ -16,8 +16,13 @@ class SocialService {
     private let publicDatabase: CKDatabase
     
     init() {
-        self.container = CKContainer.default()
+        // Explicitly use the container that matches Xcode configuration
+        self.container = CKContainer(identifier: "iCloud.com.vinay.VinProWorkoutTracker")
         self.publicDatabase = container.publicCloudDatabase
+        
+        // Debug logging
+        print("🔍 SocialService initialized")
+        print("🔍 Container identifier: \(container.containerIdentifier ?? "nil")")
     }
     
     // MARK: - User Profile Management
@@ -28,30 +33,65 @@ class SocialService {
     }
     
     func createUserProfile(username: String, displayName: String, bio: String = "") async throws {
+        print("🔍 Starting createUserProfile...")
+        
+        // Check authentication first
         guard try await checkAuthentication() else {
+            print("❌ Not authenticated")
             throw SocialError.notAuthenticated
         }
         
-        // Check if username is available
-        let predicate = NSPredicate(format: "username == %@", username)
-        let query = CKQuery(recordType: "UserProfile", predicate: predicate)
+        print("✅ Authentication OK")
         
-        let results = try await publicDatabase.records(matching: query)
-        if !results.matchResults.isEmpty {
-            throw SocialError.usernameTaken
+        do {
+            // Create profile directly - skip username check for now
+            let profile = UserProfile(
+                username: username,
+                displayName: displayName,
+                bio: bio
+            )
+            
+            print("🔍 Creating CloudKit record...")
+            let record = profile.toCKRecord()
+            
+            print("🔍 Saving to CloudKit...")
+            try await publicDatabase.save(record)
+            
+            print("✅ Profile saved successfully!")
+            self.currentUserProfile = profile
+            
+        } catch let error as CKError {
+            // Provide better error messages for CloudKit issues
+            print("❌ CloudKit Error: \(error.localizedDescription)")
+            print("❌ Error Code: \(error.code.rawValue)")
+            print("❌ Error domain: \(error.errorCode)")
+            
+            switch error.code {
+            case .notAuthenticated:
+                print("❌ Reason: Not authenticated with iCloud")
+                throw SocialError.notAuthenticated
+            case .networkUnavailable, .networkFailure:
+                print("❌ Reason: Network error")
+                throw SocialError.networkError
+            case .serverResponseLost, .serviceUnavailable:
+                print("❌ Reason: Server error")
+                throw SocialError.serverError
+            case .badContainer, .missingEntitlement:
+                print("❌ Reason: Bad container or missing entitlement")
+                print("❌ Container used: iCloud.com.vinay.VinProWorkoutTracker")
+                throw SocialError.containerNotConfigured
+            case .unknownItem:
+                print("❌ Reason: Record type doesn't exist (schema not set up)")
+                throw SocialError.containerNotConfigured
+            default:
+                print("⚠️ Unknown CloudKit error")
+                print("⚠️ Make sure iCloud.com.vinay.VinProWorkoutTracker is checked in Xcode")
+                throw error
+            }
+        } catch {
+            print("❌ Non-CloudKit error: \(error)")
+            throw error
         }
-        
-        // Create profile
-        let profile = UserProfile(
-            username: username,
-            displayName: displayName,
-            bio: bio
-        )
-        
-        let record = profile.toCKRecord()
-        try await publicDatabase.save(record)
-        
-        self.currentUserProfile = profile
     }
     
     func fetchCurrentUserProfile() async throws {

@@ -3,6 +3,7 @@ import SwiftData
 
 struct ExerciseHistoryView: View {
     @Environment(\.modelContext) private var context
+    @Environment(\.dismiss) private var dismiss
 
     @Bindable var workout: Workout
     let exerciseName: String
@@ -17,6 +18,9 @@ struct ExerciseHistoryView: View {
 
     // PR banner state
     @State private var prMessage: String? = nil
+    
+    // Expandable exercise info section
+    @State private var isExerciseInfoExpanded: Bool = false
 
     // MARK: - Derived sets
 
@@ -162,9 +166,123 @@ struct ExerciseHistoryView: View {
                     }
                 }
             }
+            
+            // Exercise Information (Expandable)
+            Section {
+                DisclosureGroup(
+                    isExpanded: $isExerciseInfoExpanded
+                ) {
+                    VStack(spacing: 24) {
+                        // Muscles
+                        exerciseInfoCard(
+                            icon: "figure.strengthtraining.traditional",
+                            title: "Primary Muscles",
+                            content: ExerciseDatabase.primaryMuscles(for: exerciseName) ?? "Not available"
+                        )
+                        
+                        // How-To
+                        if let instructions = ExerciseDatabase.instructions(for: exerciseName) {
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "book.closed")
+                                        .font(.title2)
+                                        .foregroundStyle(
+                                            LinearGradient(
+                                                colors: [.blue, .purple],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                        )
+                                    
+                                    Text("How to Perform")
+                                        .font(.headline)
+                                }
+                                
+                                ForEach(Array(instructions.enumerated()), id: \.offset) { index, instruction in
+                                    HStack(alignment: .top, spacing: 8) {
+                                        Text("\(index + 1).")
+                                            .font(.body)
+                                            .foregroundStyle(.secondary)
+                                        Text(instruction)
+                                            .font(.body)
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Form Tips
+                        if let tips = ExerciseDatabase.formTips(for: exerciseName) {
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "lightbulb")
+                                        .font(.title2)
+                                        .foregroundStyle(
+                                            LinearGradient(
+                                                colors: [.blue, .purple],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                        )
+                                    
+                                    Text("Form Tips")
+                                        .font(.headline)
+                                }
+                                
+                                ForEach(tips, id: \.self) { tip in
+                                    HStack(alignment: .top, spacing: 8) {
+                                        Text("•")
+                                            .font(.body)
+                                        Text(tip)
+                                            .font(.body)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .padding(.top, 8)
+                } label: {
+                    Label("Exercise Information", systemImage: "info.circle")
+                        .font(.subheadline.weight(.medium))
+                }
+            } header: {
+                Text("")
+            }
         }
         .navigationTitle(exerciseName)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Done") {
+                    dismiss()
+                }
+            }
+        }
+    }
+    
+    // MARK: - Exercise Info Card Helper
+    
+    @ViewBuilder
+    private func exerciseInfoCard(icon: String, title: String, content: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.blue, .purple],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+            
+            VStack(alignment: .leading, spacing: 8) {
+                Text(title)
+                    .font(.headline)
+                Text(content)
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Add set + PR detection

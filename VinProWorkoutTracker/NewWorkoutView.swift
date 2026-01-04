@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftUI
 import SwiftData
 
 struct NewWorkoutView: View {
@@ -8,6 +9,10 @@ struct NewWorkoutView: View {
     // Existing workouts so we can repeat last Push/Pull
     @Query(sort: \Workout.date, order: .reverse)
     private var workouts: [Workout]
+    
+    // Custom templates
+    @Query(sort: \CustomWorkoutTemplate.createdDate, order: .reverse)
+    private var customTemplates: [CustomWorkoutTemplate]
 
     @State private var goal: Goal = .hypertrophy
     @State private var bodyweightOnly: Bool = false
@@ -34,7 +39,7 @@ struct NewWorkoutView: View {
 
     // NEW: Cascading template system
     private enum TemplateType: String, CaseIterable, Identifiable {
-        case vinay = "Vin Pull/Push (Back friendly)"
+        case vinay = "Vin Pull/Push"
         case ppl = "Push/Pull/Legs (PPL)"
         case amariss = "Amariss Personal Trainer"
         case broSplit = "Bro Split"
@@ -43,6 +48,7 @@ struct NewWorkoutView: View {
         case fullBody = "Full Body"
         case calisthenics = "Calisthenics"
         case custom = "Custom"
+        case customTemplates = "— My Templates —"
 
         var id: Self { self }
     }
@@ -98,12 +104,32 @@ struct NewWorkoutView: View {
     @State private var selectedBroSplitDay: BroSplitDay = .chest
     @State private var selectedStrongLiftsDay: StrongLiftsDay = .workoutA
     @State private var selectedMadcowDay: MadcowDay = .mondayVolume
+    @State private var selectedCustomTemplate: CustomWorkoutTemplate? = nil
 
     var body: some View {
         NavigationStack {
             Form {
                 // QUICK TEMPLATES - Cascading Dropdowns
-                Section("Quick templates") {
+                Section {
+                    HStack(spacing: 12) {
+                        Image(systemName: "sparkles")
+                            .font(.title2)
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.blue, .purple],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                        
+                        Text("Quick templates")
+                            .font(.headline)
+                        
+                        Spacer()
+                    }
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 4, trailing: 16))
+                    .listRowBackground(Color.clear)
+                    
                     Picker("Template", selection: $selectedTemplateType) {
                         ForEach(TemplateType.allCases) { type in
                             Text(type.rawValue).tag(type)
@@ -173,6 +199,23 @@ struct NewWorkoutView: View {
                     case .fullBody, .calisthenics:
                         // No second dropdown needed
                         EmptyView()
+                    case .customTemplates:
+                        // Show custom template picker
+                        if customTemplates.isEmpty {
+                            Text("No custom templates yet")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .padding(.vertical, 8)
+                        } else {
+                            Picker("Select Template", selection: $selectedCustomTemplate) {
+                                ForEach(customTemplates) { template in
+                                    Text(template.name).tag(template as CustomWorkoutTemplate?)
+                                }
+                            }
+                            .onChange(of: selectedCustomTemplate) {
+                                applySelectedTemplate()
+                            }
+                        }
                     case .custom:
                         // Will show muscle selector below
                         EmptyView()
@@ -180,8 +223,23 @@ struct NewWorkoutView: View {
                 }
 
                 // WORKOUT NAME
-                Section("Workout name") {
-                    TextField("Name", text: $workoutName)
+                Section {
+                    HStack(spacing: 12) {
+                        Image(systemName: "pencil.circle.fill")
+                            .font(.title3)
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.blue, .purple],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                        
+                        TextField("Workout name", text: $workoutName)
+                            .font(.body)
+                    }
+                } header: {
+                    Text("Workout name")
                 }
 
                 // RECENT WORKOUTS (Collapsible)
@@ -256,42 +314,91 @@ struct NewWorkoutView: View {
 
                 // EXERCISES (Collapsible)
                 if let plan = generatedPlan {
-                    DisclosureGroup("Exercises", isExpanded: $isExercisesExpanded) {
+                    DisclosureGroup(isExpanded: $isExercisesExpanded) {
                         VStack(alignment: .leading, spacing: 12) {
                             if !plan.mainExercises.isEmpty {
-                                Text("Main exercises")
-                                    .font(.headline)
-                                    .padding(.top, 4)
+                                HStack(spacing: 8) {
+                                    Image(systemName: "dumbbell.fill")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.blue)
+                                    Text("Main exercises")
+                                        .font(.headline)
+                                }
+                                .padding(.top, 4)
                                 
                                 ForEach(plan.mainExercises, id: \.name) { ex in
-                                    Text("• \(ex.name)")
-                                        .font(.subheadline)
+                                    HStack(spacing: 8) {
+                                        Circle()
+                                            .fill(
+                                                LinearGradient(
+                                                    colors: [.blue, .purple],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                )
+                                            )
+                                            .frame(width: 6, height: 6)
+                                        Text(ex.name)
+                                            .font(.subheadline)
+                                    }
                                 }
                             }
                             
                             if !plan.coreExercises.isEmpty {
-                                Text("Accessory / Core")
-                                    .font(.headline)
-                                    .padding(.top, 8)
+                                HStack(spacing: 8) {
+                                    Image(systemName: "figure.core.training")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.orange)
+                                    Text("Accessory / Core")
+                                        .font(.headline)
+                                }
+                                .padding(.top, 8)
                                 
                                 ForEach(plan.coreExercises, id: \.name) { ex in
-                                    Text("• \(ex.name)")
-                                        .font(.subheadline)
+                                    HStack(spacing: 8) {
+                                        Circle()
+                                            .fill(Color.orange)
+                                            .frame(width: 6, height: 6)
+                                        Text(ex.name)
+                                            .font(.subheadline)
+                                    }
                                 }
                             }
                             
                             if !plan.stretches.isEmpty {
-                                Text("Stretches")
-                                    .font(.headline)
-                                    .padding(.top, 8)
+                                HStack(spacing: 8) {
+                                    Image(systemName: "figure.flexibility")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.green)
+                                    Text("Stretches")
+                                        .font(.headline)
+                                }
+                                .padding(.top, 8)
                                 
                                 ForEach(plan.stretches, id: \.self) { s in
-                                    Text("• \(s)")
-                                        .font(.subheadline)
+                                    HStack(spacing: 8) {
+                                        Circle()
+                                            .fill(Color.green)
+                                            .frame(width: 6, height: 6)
+                                        Text(s)
+                                            .font(.subheadline)
+                                    }
                                 }
                             }
                         }
                         .padding(.vertical, 4)
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "list.bullet.clipboard.fill")
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [.blue, .purple],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                            Text("Exercises (\(plan.mainExercises.count + plan.coreExercises.count))")
+                                .font(.headline)
+                        }
                     }
                 }
                 
@@ -312,8 +419,24 @@ struct NewWorkoutView: View {
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
+                    Button {
                         saveWorkout()
+                    } label: {
+                        Text("Save")
+                            .fontWeight(.semibold)
+                            .foregroundStyle(
+                                generatedPlan != nil ?
+                                LinearGradient(
+                                    colors: [.blue, .purple],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                ) :
+                                LinearGradient(
+                                    colors: [.gray, .gray],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
                     }
                     .disabled(generatedPlan == nil)
                 }
@@ -345,6 +468,10 @@ struct NewWorkoutView: View {
             applyFullBodyTemplate()
         case .calisthenics:
             applyCalisthenicsTemplate()
+        case .customTemplates:
+            if let template = selectedCustomTemplate {
+                applyCustomTemplate(template)
+            }
         case .custom:
             // Custom uses the muscle selector and generate button
             return
@@ -366,7 +493,7 @@ struct NewWorkoutView: View {
             mode = .full
         case .calisthenics:
             mode = .calisthenics
-        case .amariss, .broSplit, .stronglifts, .madcow:
+        case .amariss, .broSplit, .stronglifts, .madcow, .customTemplates:
             // Already handled by templates
             return
         }
@@ -998,6 +1125,31 @@ struct NewWorkoutView: View {
         )
         generatedPlan = plan
         workoutName = defaultName(for: "Calisthenics")
+    }
+    
+    // MARK: - Custom Template
+    
+    private func applyCustomTemplate(_ template: CustomWorkoutTemplate) {
+        let exercises = template.mainExercises.compactMap { name in
+            ExerciseLibrary.all.first { $0.name == name }
+        }
+        
+        let coreExercises = template.coreExercises.compactMap { name in
+            ExerciseLibrary.all.first { $0.name == name }
+        }
+        
+        let plan = GeneratedWorkoutPlan(
+            name: template.name,
+            mainExercises: exercises,
+            coreExercises: coreExercises,
+            stretches: template.stretches,
+            warmupMinutes: template.warmupMinutes,
+            coreMinutes: template.coreMinutes,
+            stretchMinutes: template.stretchMinutes
+        )
+        
+        generatedPlan = plan
+        workoutName = defaultName(for: template.name)
     }
 }
 

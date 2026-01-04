@@ -9,6 +9,7 @@ struct ExerciseInfoView: View {
     private var allSets: [SetEntry]
 
     @State private var selectedTab: InfoTab = .about
+    @State private var selectedAboutTab: AboutSubTab = .muscles
     @State private var range: TimeRange = .allTime
 
     enum InfoTab: String, CaseIterable, Identifiable {
@@ -22,6 +23,20 @@ struct ExerciseInfoView: View {
             case .history: return "History"
             case .charts:  return "Charts"
             case .records: return "Records"
+            }
+        }
+    }
+    
+    enum AboutSubTab: String, CaseIterable, Identifiable {
+        case muscles, howTo, tips
+        
+        var id: String { rawValue }
+        
+        var title: String {
+            switch self {
+            case .muscles: return "Muscles"
+            case .howTo:   return "How-To"
+            case .tips:    return "Tips"
             }
         }
     }
@@ -75,14 +90,91 @@ struct ExerciseInfoView: View {
     // MARK: - About
 
     private var aboutView: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                Text(exerciseName)
-                    .font(.title2)
-                    .bold()
-
-                // Primary muscles
-                if let muscles = ExerciseDatabase.primaryMuscles(for: exerciseName) {
+        VStack(spacing: 0) {
+            // Exercise name with gradient
+            Text(exerciseName)
+                .font(.title.bold())
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.blue, .purple],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .padding(.top, 16)
+                .padding(.horizontal)
+            
+            // Simple text-based tabs with gradient underline
+            HStack(spacing: 0) {
+                ForEach(AboutSubTab.allCases) { tab in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedAboutTab = tab
+                        }
+                    } label: {
+                        VStack(spacing: 8) {
+                            Text(tab.title)
+                                .font(.subheadline.weight(selectedAboutTab == tab ? .semibold : .regular))
+                                .foregroundColor(selectedAboutTab == tab ? .primary : .secondary)
+                            
+                            // Gradient underline for active tab
+                            if selectedAboutTab == tab {
+                                LinearGradient(
+                                    colors: [.blue, .purple],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                                .frame(height: 3)
+                                .clipShape(Capsule())
+                            } else {
+                                Rectangle()
+                                    .fill(Color.clear)
+                                    .frame(height: 3)
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.top, 16)
+            
+            Divider()
+                .padding(.top, 8)
+            
+            // Content based on selected sub-tab
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    switch selectedAboutTab {
+                    case .muscles:
+                        musclesContent
+                    case .howTo:
+                        howToContent
+                    case .tips:
+                        tipsContent
+                    }
+                }
+                .padding()
+            }
+        }
+    }
+    
+    // MARK: - About Sub-Content
+    
+    private var musclesContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if let muscles = ExerciseDatabase.primaryMuscles(for: exerciseName) {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: "figure.strengthtraining.traditional")
+                        .font(.title2)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.blue, .purple],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Primary Muscles")
                             .font(.headline)
@@ -90,12 +182,30 @@ struct ExerciseInfoView: View {
                             .font(.body)
                             .foregroundStyle(.secondary)
                     }
-                    
-                    Divider()
                 }
-
-                // Instructions
-                if let instructions = ExerciseDatabase.instructions(for: exerciseName) {
+            } else {
+                Text("Muscle information not available")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    
+    private var howToContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if let instructions = ExerciseDatabase.instructions(for: exerciseName) {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: "book.closed")
+                        .font(.title2)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.blue, .purple],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    
                     VStack(alignment: .leading, spacing: 8) {
                         Text("How to Perform")
                             .font(.headline)
@@ -110,12 +220,30 @@ struct ExerciseInfoView: View {
                             }
                         }
                     }
-                    
-                    Divider()
                 }
-
-                // Form tips
-                if let tips = ExerciseDatabase.formTips(for: exerciseName) {
+            } else {
+                Text("Instructions not available")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    
+    private var tipsContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if let tips = ExerciseDatabase.formTips(for: exerciseName) {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: "lightbulb")
+                        .font(.title2)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.blue, .purple],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Form Tips")
                             .font(.headline)
@@ -130,9 +258,13 @@ struct ExerciseInfoView: View {
                         }
                     }
                 }
+            } else {
+                Text("Form tips not available")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
             }
-            .padding()
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - History

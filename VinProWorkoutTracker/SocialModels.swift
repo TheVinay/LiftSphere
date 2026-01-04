@@ -200,17 +200,26 @@ enum SocialError: LocalizedError {
     case usernameTaken
     case alreadyFollowing
     case userNotFound
+    case networkError
+    case serverError
+    case containerNotConfigured
     
     var errorDescription: String? {
         switch self {
         case .notAuthenticated:
-            return "Please set up your profile first"
+            return "You must be signed in to iCloud to use social features. Please sign in to iCloud in Settings."
         case .usernameTaken:
-            return "This username is already taken"
+            return "This username is already taken. Please choose a different one."
         case .alreadyFollowing:
-            return "You're already following this user"
+            return "You're already following this user."
         case .userNotFound:
-            return "User not found"
+            return "User not found."
+        case .networkError:
+            return "Network connection error. Please check your internet connection and try again."
+        case .serverError:
+            return "CloudKit server is temporarily unavailable. Please try again later."
+        case .containerNotConfigured:
+            return "iCloud container is not properly configured. Please check your iCloud settings in Xcode."
         }
     }
 }

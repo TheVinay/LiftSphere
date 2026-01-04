@@ -21,7 +21,7 @@ struct RootTabView: View {
 
             FriendsView()
                 .tabItem {
-                    Label("Friends", systemImage: "person.2.fill")
+                   Label("Friends", systemImage: "person.2.fill")
                 }
 
             LearnView()

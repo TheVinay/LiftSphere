@@ -19,6 +19,11 @@ class SetEntry {
         self.reps = reps
         self.timestamp = timestamp
     }
+    
+    /// Calculate the volume (weight × reps) for this set
+    var volume: Double {
+        weight * Double(reps)
+    }
 }
 
 @Model
@@ -75,3 +80,53 @@ class Workout {
         sets.reduce(0) { $0 + ($1.weight * Double($1.reps)) }
     }
 }
+@Model
+class CustomWorkoutTemplate {
+    var name: String
+    var dayOfWeek: String? // Optional: "Monday", "Tuesday", etc., or nil
+    var createdDate: Date
+    
+    // Template structure (same as Workout)
+    var warmupMinutes: Int
+    var coreMinutes: Int
+    var stretchMinutes: Int
+    var mainExercises: [String]
+    var coreExercises: [String]
+    var stretches: [String]
+    
+    init(
+        name: String,
+        dayOfWeek: String? = nil,
+        warmupMinutes: Int = 5,
+        coreMinutes: Int = 5,
+        stretchMinutes: Int = 5,
+        mainExercises: [String] = [],
+        coreExercises: [String] = [],
+        stretches: [String] = []
+    ) {
+        self.name = name
+        self.dayOfWeek = dayOfWeek
+        self.createdDate = Date()
+        self.warmupMinutes = warmupMinutes
+        self.coreMinutes = coreMinutes
+        self.stretchMinutes = stretchMinutes
+        self.mainExercises = mainExercises
+        self.coreExercises = coreExercises
+        self.stretches = stretches
+    }
+    
+    /// Convert this template into a new Workout instance
+    func toWorkout() -> Workout {
+        return Workout(
+            date: Date(),
+            name: self.name,
+            warmupMinutes: self.warmupMinutes,
+            coreMinutes: self.coreMinutes,
+            stretchMinutes: self.stretchMinutes,
+            mainExercises: self.mainExercises,
+            coreExercises: self.coreExercises,
+            stretches: self.stretches
+        )
+    }
+}
+
