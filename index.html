@@ -5,53 +5,295 @@
   <title>LiftSphere Workout – Support</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-      background: #020617;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
       color: #e5e7eb;
+      min-height: 100vh;
       padding: 40px 20px;
+    }
+
+    .container {
       max-width: 720px;
-      margin: auto;
+      margin: 0 auto;
     }
+
+    /* App Logo/Header */
+    .header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .logo {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 24px;
+      background: linear-gradient(135deg, #3b82f6 0%, #9333ea 100%);
+      border-radius: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 20px 40px rgba(59, 130, 246, 0.3);
+    }
+
+    .logo-text {
+      font-size: 48px;
+      font-weight: 700;
+      color: white;
+      letter-spacing: -2px;
+    }
+
     h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
       color: #ffffff;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
+
+    .tagline {
+      font-size: 1.1rem;
+      color: #94a3b8;
+      margin-bottom: 40px;
+    }
+
+    /* Content Cards */
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 32px;
+      margin-bottom: 24px;
+      backdrop-filter: blur(10px);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(59, 130, 246, 0.2);
+    }
+
+    .card-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .emoji {
+      font-size: 1.8rem;
+    }
+
     p {
-      color: #cbd5f5;
-      line-height: 1.6;
+      color: #cbd5e1;
+      line-height: 1.7;
+      margin-bottom: 16px;
+      font-size: 1.05rem;
     }
+
     a {
-      color: #38bdf8;
+      color: #60a5fa;
       text-decoration: none;
       font-weight: 500;
+      transition: color 0.2s;
+      word-break: break-all;
+    }
+
+    a:hover {
+      color: #93c5fd;
+      text-decoration: underline;
+    }
+
+    .contact-method {
+      background: rgba(59, 130, 246, 0.1);
+      border-left: 4px solid #3b82f6;
+      padding: 20px;
+      border-radius: 12px;
+      margin: 16px 0;
+    }
+
+    .contact-method strong {
+      color: #60a5fa;
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* FAQ Section */
+    .faq {
+      margin-top: 20px;
+    }
+
+    .faq-item {
+      margin-bottom: 24px;
+    }
+
+    .faq-item h3 {
+      color: #e5e7eb;
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .faq-item p {
+      color: #94a3b8;
+      margin-bottom: 0;
+      font-size: 1rem;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 60px;
+      padding-top: 40px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      body {
+        padding: 20px 16px;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      .logo {
+        width: 100px;
+        height: 100px;
+      }
+
+      .logo-text {
+        font-size: 40px;
+      }
+
+      .card {
+        padding: 24px;
+      }
+
+      .card-title {
+        font-size: 1.3rem;
+      }
     }
   </style>
 </head>
 <body>
 
-  <h1>LiftSphere Workout Support</h1>
+  <div class="container">
+    
+    <!-- Header with Logo -->
+    <div class="header">
+      <div class="logo">
+        <span class="logo-text">LS</span>
+      </div>
+      <h1>LiftSphere Workout</h1>
+      <p class="tagline">Track Your Fitness Journey 💪</p>
+    </div>
 
-  <p>
-    If you have questions, encounter issues, or would like to provide feedback
-    about LiftSphere Workout, you can reach out using the contact options below.
-  </p>
+    <!-- Welcome Card -->
+    <div class="card">
+      <div class="card-title">
+        <span class="emoji">👋</span>
+        <span>Need Help?</span>
+      </div>
+      <p>
+        We're here to support you on your fitness journey! Whether you have questions, 
+        encounter issues, or want to share feedback about LiftSphere Workout, we'd love to hear from you.
+      </p>
+    </div>
 
-  <p>
-    📧 Email support:  
-    <br />
-    <a href="mailto:vinay.viswam@gmail.com">vinay.viswam@gmail.com</a>
-  </p>
+    <!-- Contact Card -->
+    <div class="card">
+      <div class="card-title">
+        <span class="emoji">📬</span>
+        <span>Get in Touch</span>
+      </div>
+      
+      <div class="contact-method">
+        <strong>📧 Email Support</strong>
+        <a href="mailto:vinay.viswam@gmail.com">vinay.viswam@gmail.com</a>
+      </div>
 
-  <p>
-    🛠 GitHub repository:  
-    <br />
-    <a href="https://github.com/thevinay/liftsphereworkout">
-      https://github.com/thevinay/liftsphereworkout
-    </a>
-  </p>
+      <div class="contact-method">
+        <strong>🛠 GitHub Repository</strong>
+        <a href="https://github.com/thevinay/liftsphereworkout" target="_blank">
+          github.com/thevinay/liftsphereworkout
+        </a>
+      </div>
 
-  <p>
-    We aim to respond to support requests as quickly as possible.
-  </p>
+      <p style="margin-top: 24px; font-size: 0.95rem; color: #94a3b8;">
+        ⚡ We aim to respond to all inquiries within 24-48 hours.
+      </p>
+    </div>
+
+    <!-- FAQ Card -->
+    <div class="card">
+      <div class="card-title">
+        <span class="emoji">💡</span>
+        <span>Frequently Asked Questions</span>
+      </div>
+      
+      <div class="faq">
+        <div class="faq-item">
+          <h3>How do I enable iCloud sync?</h3>
+          <p>iCloud sync is automatic! Just make sure you're signed into iCloud on your device (Settings → Your Name → iCloud).</p>
+        </div>
+
+        <div class="faq-item">
+          <h3>How do I connect with friends?</h3>
+          <p>Go to the Friends tab, create your profile, then search for friends to connect and share your achievements!</p>
+        </div>
+
+        <div class="faq-item">
+          <h3>Can I export my workout data?</h3>
+          <p>Yes! Go to Settings → Data Export & Backup to export your workouts as CSV or JSON.</p>
+        </div>
+
+        <div class="faq-item">
+          <h3>How do I integrate with Apple Health?</h3>
+          <p>Go to Settings → Health & Fitness to connect with HealthKit and sync your body metrics.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Privacy Card -->
+    <div class="card">
+      <div class="card-title">
+        <span class="emoji">🔒</span>
+        <span>Privacy & Security</span>
+      </div>
+      <p>
+        Your workout data is private and encrypted. We don't share your data with third parties.
+      </p>
+      <p>
+        <a href="privacy.html">Read our Privacy Policy →</a>
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>© 2025 LiftSphere Workout. All rights reserved.</p>
+      <p style="margin-top: 8px;">Made with 💙 for fitness enthusiasts</p>
+    </div>
+
+  </div>
 
 </body>
+</html>
