@@ -91,11 +91,102 @@ struct AnalyticsView: View {
                     title: "Muscle Distribution & Balance",
                     initiallyExpanded: true
                 ) {
-                    VStack(spacing: 16) {
-                        muscleDistributionCard
+                    VStack(alignment: .leading, spacing: 20) {
+                        // Filters
+                        HStack {
+                            Picker("", selection: $selectedRange) {
+                                ForEach(TimeRange.allCases) { Text($0.rawValue).tag($0) }
+                            }
+                            .pickerStyle(.menu)
+                            .tint(.primary)
+
+                            Spacer()
+
+                            Picker("", selection: $selectedMetric) {
+                                ForEach(MetricType.allCases) { Text($0.rawValue).tag($0) }
+                            }
+                            .pickerStyle(.segmented)
+                            .frame(width: 180)
+                        }
+
+                        // Radar chart
+                        RadarChartView(
+                            values: distributionValues(),
+                            previousValues: previousDistributionValues(),
+                            maxValue: max(
+                                distributionValues().values.max() ?? 1,
+                                previousDistributionValues().values.max() ?? 1
+                            ),
+                            selectedMuscle: $selectedMuscle
+                        )
+                        .frame(height: 260)
+                        
+                        Divider()
+                        
+                        // Stats grid
                         muscleStatsGrid
-                        coachRecommendationCard
-                        undertrainedAlertCard
+                        
+                        Divider()
+                        
+                        // Training insights
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Image(systemName: "chart.bar.doc.horizontal")
+                                    .foregroundStyle(.blue)
+                                Text("Training Insights")
+                                    .font(.subheadline.weight(.semibold))
+                            }
+                            
+                            Text(coachMessage())
+                                .font(.body)
+                                .foregroundStyle(.primary)
+                        }
+                        
+                        // Undertrained muscles (if any)
+                        let undertrained = undertrainedMuscles()
+                        if !undertrained.isEmpty {
+                            Divider()
+                            
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .foregroundStyle(.orange)
+                                    Text("Needs Attention")
+                                        .font(.subheadline.weight(.semibold))
+                                }
+                                
+                                Text("Muscles that need more attention based on recent training")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                
+                                VStack(alignment: .leading, spacing: 8) {
+                                    let values = distributionValues()
+
+                                    ForEach(undertrained) { muscle in
+                                        let severity = severity(for: muscle, values: values)
+
+                                        HStack {
+                                            Image(systemName: "circle.fill")
+                                                .font(.system(size: 6))
+                                                .foregroundStyle(severity.color)
+
+                                            Text(muscle.displayName)
+                                                .font(.body)
+
+                                            Spacer()
+
+                                            Text(severity.label)
+                                                .font(.caption)
+                                                .foregroundStyle(severity.color)
+                                        }
+                                        .padding(.vertical, 4)
+                                        .onTapGesture {
+                                            selectedMuscle = muscle
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -114,7 +205,10 @@ struct AnalyticsView: View {
                     consistencyCalendarCard
                 }
 
-                CollapsibleSection(title: "Muscle Activation") {
+                CollapsibleSection(
+                    title: "Muscle Activation",
+                    subtitle: "Last 30 days"
+                ) {
                     muscleHeatmapCard
                 }
 
@@ -213,33 +307,35 @@ struct AnalyticsView: View {
         var body: some View {
             VStack(spacing: 0) {
 
-                // 👉 THIS is the tappable bar you like
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.headline)
-
-                    if let subtitle {
-                        Text(subtitle)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    LinearGradient(
-                        colors: [.blue.opacity(0.18), .purple.opacity(0.14)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .contentShape(Rectangle())
-                .onTapGesture {
+                // Header bar
+                Button {
                     withAnimation(.easeInOut(duration: 0.25)) {
                         isExpanded.toggle()
                     }
+                } label: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(title)
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+
+                            if let subtitle {
+                                Text(subtitle)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                            .foregroundStyle(.secondary)
+                    }
                 }
+                .buttonStyle(.plain)
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
 
                 if isExpanded {
                     content()
@@ -247,6 +343,14 @@ struct AnalyticsView: View {
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
+            .background(
+                LinearGradient(
+                    colors: [.blue.opacity(0.18), .purple.opacity(0.14)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 16))
         }
     }
 
@@ -305,7 +409,7 @@ struct AnalyticsView: View {
             return String(format: "%+.0f%%", pct)
         }()
 
-        return analyticsCard(title: "Weekly Summary", subtitle: "This week vs last week") {
+        return VStack(spacing: 16) {
             HStack {
                 statBox("Workouts", "\(thisWeek.workouts)")
                 Spacer()
@@ -422,17 +526,96 @@ struct AnalyticsView: View {
     // MARK: - Consistency
 
     private var consistencyCalendarCard: some View {
-        analyticsCard(title: "Consistency (Last 28 Days)") {
-            let days = last28Days()
-            let active = Set(workouts.map { calendar.startOfDay(for: $0.date) })
-
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7)) {
-                ForEach(days, id: \.self) { day in
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(active.contains(day) ? .green : .gray.opacity(0.2))
-                        .frame(width: 22, height: 22)
+        VStack(alignment: .leading, spacing: 12) {
+            // Day labels (S M T W T F S)
+            HStack(spacing: 4) {
+                ForEach(["S", "M", "T", "W", "T", "F", "S"], id: \.self) { day in
+                    Text(day)
+                        .font(.caption2.bold())
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
                 }
             }
+            
+            // Calendar grid
+            let days = last28Days()
+            let active = Set(workouts.map { calendar.startOfDay(for: $0.date) })
+            let today = calendar.startOfDay(for: Date())
+            
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: 4) {
+                ForEach(days, id: \.self) { day in
+                    let isActive = active.contains(day)
+                    let isToday = calendar.isDate(day, inSameDayAs: today)
+                    let dayOfMonth = calendar.component(.day, from: day)
+                    let isFirstOfWeek = calendar.component(.weekday, from: day) == 1
+                    
+                    ZStack {
+                        // Base square
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(isActive ? .green : .gray.opacity(0.15))
+                            .frame(height: 28)
+                        
+                        // Today indicator
+                        if isToday {
+                            RoundedRectangle(cornerRadius: 4)
+                                .strokeBorder(.blue, lineWidth: 2)
+                        }
+                        
+                        // Date number (only on Sundays)
+                        if isFirstOfWeek {
+                            Text("\(dayOfMonth)")
+                                .font(.system(size: 9, weight: .semibold))
+                                .foregroundStyle(isActive ? .white : .secondary)
+                        }
+                    }
+                }
+            }
+            
+            // Legend
+            HStack(spacing: 16) {
+                HStack(spacing: 4) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(.green)
+                        .frame(width: 12, height: 12)
+                    Text("Workout")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                
+                HStack(spacing: 4) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(.gray.opacity(0.15))
+                        .frame(width: 12, height: 12)
+                    Text("Rest")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                
+                HStack(spacing: 4) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .strokeBorder(.blue, lineWidth: 1.5)
+                        .frame(width: 12, height: 12)
+                    Text("Today")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            
+            // Stats
+            let workoutDays = active.filter { days.contains($0) }.count
+            let percentage = (Double(workoutDays) / Double(days.count)) * 100
+            
+            HStack {
+                Text("\(workoutDays)/28 days")
+                    .font(.subheadline.weight(.medium))
+                
+                Spacer()
+                
+                Text("\(Int(percentage))% active")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.top, 4)
         }
     }
 
@@ -446,16 +629,21 @@ struct AnalyticsView: View {
     // MARK: - Muscle Heatmap
 
     private var muscleHeatmapCard: some View {
-        analyticsCard(title: "Muscle Activation (30 Days)") {
+        VStack(spacing: 12) {
+            Text("Tap muscle groups to highlight them in distribution chart")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
             let volumes = muscleVolumes(days: 30)
             let maxVal = volumes.values.max() ?? 1
 
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3)) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 12) {
                 ForEach(MuscleGroup.allCases) { group in
                     let val = volumes[group] ?? 0
                     let intensity = max(0.15, val / maxVal)
 
-                    VStack {
+                    VStack(spacing: 8) {
                         RoundedRectangle(cornerRadius: 12)
                             .fill(Color.red.opacity(intensity))
                             .frame(height: 50)
@@ -463,6 +651,9 @@ struct AnalyticsView: View {
                         Text(group.displayName)
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                    }
+                    .onTapGesture {
+                        selectedMuscle = selectedMuscle == group ? nil : group
                     }
                 }
             }
@@ -484,10 +675,12 @@ struct AnalyticsView: View {
 
     // MARK: - Streak Card
 
+    private var streakData: StreakData {
+        calculateStreakData()
+    }
+    
     private var streakCard: some View {
-        let streakData = calculateStreakData()
-        
-        return VStack(spacing: 16) {
+        VStack(spacing: 16) {
             // Current Streak - Large Display
             VStack(spacing: 8) {
                 HStack {
@@ -504,7 +697,7 @@ struct AnalyticsView: View {
                     VStack(alignment: .trailing, spacing: 4) {
                         Text("\(streakData.currentStreak)")
                             .font(.system(size: 48, weight: .bold))
-                            .foregroundColor(streakData.currentStreak > 0 ? .primary : .secondary)
+                            .foregroundStyle(streakData.currentStreak > 0 ? .primary : .secondary)
                         
                         Text(streakData.currentStreak == 1 ? "Day" : "Days")
                             .font(.subheadline)
@@ -527,7 +720,7 @@ struct AnalyticsView: View {
                 VStack(spacing: 6) {
                     Image(systemName: "trophy.fill")
                         .font(.title2)
-                        .foregroundColor(.yellow)
+                        .foregroundStyle(.yellow)
                     
                     Text("\(streakData.longestStreak)")
                         .font(.title2.bold())
@@ -545,7 +738,7 @@ struct AnalyticsView: View {
                 VStack(spacing: 6) {
                     Image(systemName: "calendar.badge.clock")
                         .font(.title2)
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.blue)
                     
                     Text("\(streakData.workoutsThisMonth)")
                         .font(.title2.bold())
@@ -563,7 +756,7 @@ struct AnalyticsView: View {
                 VStack(spacing: 6) {
                     Image(systemName: "figure.run")
                         .font(.title2)
-                        .foregroundColor(.green)
+                        .foregroundStyle(.green)
                     
                     Text("\(streakData.workoutsThisWeek)")
                         .font(.title2.bold())
@@ -582,7 +775,7 @@ struct AnalyticsView: View {
             if let lastWorkout = streakData.lastWorkoutDate {
                 HStack {
                     Image(systemName: "clock.fill")
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                     
                     Text("Last workout: \(formatLastWorkoutDate(lastWorkout))")
                         .font(.caption)
@@ -593,10 +786,6 @@ struct AnalyticsView: View {
                 .padding(.horizontal, 4)
             }
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(16)
-        .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
     }
     
     // MARK: - Streak Calculations
@@ -698,36 +887,36 @@ struct AnalyticsView: View {
     // MARK: - Muscle Distribution
 
     private var muscleDistributionCard: some View {
-        analyticsCard(title: "Muscle Distribution") {
-            VStack(spacing: 12) {
-                HStack {
-                    Picker("", selection: $selectedRange) {
-                        ForEach(TimeRange.allCases) { Text($0.rawValue).tag($0) }
-                    }
-                    .pickerStyle(.menu)
-
-                    Spacer()
-
-                    Picker("", selection: $selectedMetric) {
-                        ForEach(MetricType.allCases) { Text($0.rawValue).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(width: 180)
+        VStack(spacing: 12) {
+            // Filters
+            HStack {
+                Picker("", selection: $selectedRange) {
+                    ForEach(TimeRange.allCases) { Text($0.rawValue).tag($0) }
                 }
+                .pickerStyle(.menu)
 
-                RadarChartView(
-                    values: distributionValues(),
-                    previousValues: previousDistributionValues(),
-                    maxValue: max(
-                        distributionValues().values.max() ?? 1,
-                        previousDistributionValues().values.max() ?? 1
-                    ),
-                    selectedMuscle: $selectedMuscle
-                )
+                Spacer()
 
-                .frame(height: 260)
+                Picker("", selection: $selectedMetric) {
+                    ForEach(MetricType.allCases) { Text($0.rawValue).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 180)
             }
+
+            // Radar chart
+            RadarChartView(
+                values: distributionValues(),
+                previousValues: previousDistributionValues(),
+                maxValue: max(
+                    distributionValues().values.max() ?? 1,
+                    previousDistributionValues().values.max() ?? 1
+                ),
+                selectedMuscle: $selectedMuscle
+            )
+            .frame(height: 260)
         }
+        .padding()
     }
     
     private var undertrainedAlertCard: some View {
@@ -735,10 +924,11 @@ struct AnalyticsView: View {
 
         return Group {
             if !undertrained.isEmpty {
-                analyticsCard(
-                    title: "Undertrained Muscles",
-                    subtitle: "Based on recent \(selectedMetric.rawValue.lowercased())"
-                ) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Muscles that need more attention based on recent training")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
                     VStack(alignment: .leading, spacing: 8) {
                         let values = distributionValues()
 
@@ -747,7 +937,7 @@ struct AnalyticsView: View {
 
                             HStack {
                                 Image(systemName: "exclamationmark.triangle.fill")
-                                    .foregroundColor(severity.color)
+                                    .foregroundStyle(severity.color)
 
                                 Text(muscle.displayName)
                                     .font(.body)
@@ -763,9 +953,9 @@ struct AnalyticsView: View {
                                 selectedMuscle = muscle
                             }
                         }
-
                     }
                 }
+                .padding()
             }
         }
     }
@@ -952,19 +1142,17 @@ struct AnalyticsView: View {
                         """)
                         .font(.caption)
                         .multilineTextAlignment(.center)
-
-                            .font(.caption)
-                            .foregroundStyle(
-                                selectedMuscle == muscles[i] ? .blue : .secondary
-                            )
-                            .position(
-                                x: center.x + cos(angle) * (radius + 16),
-                                y: center.y + sin(angle) * (radius + 16)
-                            )
-                            .onTapGesture {
-                                selectedMuscle =
-                                    selectedMuscle == muscles[i] ? nil : muscles[i]
-                            }
+                        .foregroundStyle(
+                            selectedMuscle == muscles[i] ? .blue : .secondary
+                        )
+                        .position(
+                            x: center.x + cos(angle) * (radius + 16),
+                            y: center.y + sin(angle) * (radius + 16)
+                        )
+                        .onTapGesture {
+                            selectedMuscle =
+                                selectedMuscle == muscles[i] ? nil : muscles[i]
+                        }
                     }
 
                     
@@ -1152,10 +1340,19 @@ struct AnalyticsView: View {
     // MARK: - Coach
 
     private var coachRecommendationCard: some View {
-        analyticsCard(title: "Coach Vin Suggests") {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "chart.bar.doc.horizontal")
+                    .foregroundStyle(.blue)
+                Text("Training Insights")
+                    .font(.subheadline.weight(.semibold))
+            }
+            
             Text(coachMessage())
                 .font(.body)
+                .foregroundStyle(.primary)
         }
+        .padding()
     }
 
 
@@ -1164,7 +1361,7 @@ struct AnalyticsView: View {
     private var summaryCard: some View {
         let volume = sets.reduce(0) { $0 + ($1.weight * Double($1.reps)) }
 
-        return analyticsCard(title: "Overview") {
+        return VStack(spacing: 12) {
             HStack {
                 statBox("Workouts", "\(workouts.count)")
                 Spacer()
@@ -1173,10 +1370,11 @@ struct AnalyticsView: View {
                 statBox("Volume", "\(Int(volume))")
             }
         }
+        .padding()
     }
 
     private var volumeOverTimeCard: some View {
-        analyticsCard(title: "Volume Over Time") {
+        VStack(spacing: 8) {
             Chart(workouts) {
                 LineMark(
                     x: .value("Date", $0.date),
@@ -1193,7 +1391,12 @@ struct AnalyticsView: View {
             .sorted { $0.1 > $1.1 }
             .prefix(5)
 
-        return analyticsCard(title: "Top Exercises") {
+        return VStack(spacing: 12) {
+            Text("Ranked by total volume lifted")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
             Chart(rows, id: \.0) {
                 BarMark(
                     x: .value("Volume", $0.1),
@@ -1272,7 +1475,9 @@ private struct CollapsibleSection<Content: View>: View {
             } label: {
                 HStack {
                     VStack(alignment: .leading) {
-                        Text(title).font(.headline)
+                        Text(title)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
                         if let subtitle {
                             Text(subtitle)
                                 .font(.caption)
@@ -1284,6 +1489,7 @@ private struct CollapsibleSection<Content: View>: View {
                         .foregroundStyle(.secondary)
                 }
             }
+            .buttonStyle(.plain)
 
             if expanded {
                 content

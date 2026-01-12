@@ -167,7 +167,7 @@ struct ProfileView: View {
 
                     // PROFILE ANALYTICS CARDS
                     VStack(spacing: 16) {
-                        // Health Stats Button
+                        // Apple Health Button
                         Button {
                             showHealthStats = true
                         } label: {
@@ -183,7 +183,7 @@ struct ProfileView: View {
                                     )
                                 
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("Health Stats")
+                                    Text("Apple Health")
                                         .font(.headline)
                                     Text("View body composition & activity")
                                         .font(.caption)

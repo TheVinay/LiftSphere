@@ -13,7 +13,7 @@ struct OnboardingView: View {
     private let pages = [
         OnboardingPage(
             title: "Welcome to LiftSphere",
-            subtitle: "Your back-friendly workout companion",
+            subtitle: "Your friendly fitness companion",
             systemImage: "figure.strengthtraining.traditional",
             description: "Track workouts, analyze progress, and build strength safely with exercises designed to protect your lower back."
         ),

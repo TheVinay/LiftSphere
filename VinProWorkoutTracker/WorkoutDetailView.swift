@@ -599,6 +599,7 @@ private struct PrimaryPlanEditorView: View {
                     showingExercisePicker = true
                 } label: {
                     Label("Add exercise", systemImage: "plus.circle")
+                        .foregroundStyle(.blue)
                 }
             }
         }
@@ -642,6 +643,7 @@ private struct AccessoryEditorView: View {
                     showingExercisePicker = true
                 } label: {
                     Label("Add accessory exercise", systemImage: "plus.circle")
+                        .foregroundStyle(.blue)
                 }
             }
         }

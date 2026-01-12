@@ -29,6 +29,7 @@ struct RootTabView: View {
                     Label("Learn", systemImage: "book.closed")
                 }
         }
+        .tint(.blue)
     }
 }
 

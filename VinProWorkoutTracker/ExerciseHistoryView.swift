@@ -132,6 +132,7 @@ struct ExerciseHistoryView: View {
                 Button("Add set") {
                     addSet()
                 }
+                .foregroundStyle(.blue)
                 .disabled(weightText.isEmpty || repsText.isEmpty)
             }
 
@@ -243,6 +244,7 @@ struct ExerciseHistoryView: View {
                 } label: {
                     Label("Exercise Information", systemImage: "info.circle")
                         .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.blue)
                 }
             } header: {
                 Text("")

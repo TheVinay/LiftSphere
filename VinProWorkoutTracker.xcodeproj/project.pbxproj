@@ -7,9 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		843E15D92F1199E9009B5523 /* FEATURE_MANIFEST.md in Resources */ = {isa = PBXBuildFile; fileRef = 843E15D82F1199E8009B5523 /* FEATURE_MANIFEST.md */; };
+		843E15E12F131F70009B5523 /* PROJECT_MANIFEST.md in Resources */ = {isa = PBXBuildFile; fileRef = 843E15E02F131F70009B5523 /* PROJECT_MANIFEST.md */; };
 		8490D07A2EEA419200351B1C /* AppleSignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8490D0792EEA419200351B1C /* AppleSignInView.swift */; };
 		8490D07E2EEA464400351B1C /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8490D07D2EEA464400351B1C /* WelcomeView.swift */; };
 		8490D0E62EECE3DC00351B1C /* WorkoutExportSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8490D0E52EECE3DC00351B1C /* WorkoutExportSupport.swift */; };
+		84B87A5F2F132D7200DE5E40 /* WorkoutCreationButtonRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B87A5E2F132D7200DE5E40 /* WorkoutCreationButtonRow.swift */; };
+		84B87A612F132EC600DE5E40 /* CreateWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B87A602F132EC600DE5E40 /* CreateWorkoutView.swift */; };
+		84B87A652F133C4000DE5E40 /* BrowseWorkoutsViewNew.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B87A642F133C4000DE5E40 /* BrowseWorkoutsViewNew.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -33,9 +38,14 @@
 		842446CF2EE15B790018DAA6 /* VinProWorkoutTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VinProWorkoutTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		842446DF2EE15B7D0018DAA6 /* VinProWorkoutTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VinProWorkoutTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		842446E92EE15B7D0018DAA6 /* VinProWorkoutTrackerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VinProWorkoutTrackerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		843E15D82F1199E8009B5523 /* FEATURE_MANIFEST.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = FEATURE_MANIFEST.md; sourceTree = "<group>"; };
+		843E15E02F131F70009B5523 /* PROJECT_MANIFEST.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PROJECT_MANIFEST.md; sourceTree = "<group>"; };
 		8490D0792EEA419200351B1C /* AppleSignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInView.swift; sourceTree = "<group>"; };
 		8490D07D2EEA464400351B1C /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		8490D0E52EECE3DC00351B1C /* WorkoutExportSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutExportSupport.swift; sourceTree = "<group>"; };
+		84B87A5E2F132D7200DE5E40 /* WorkoutCreationButtonRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCreationButtonRow.swift; sourceTree = "<group>"; };
+		84B87A602F132EC600DE5E40 /* CreateWorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateWorkoutView.swift; sourceTree = "<group>"; };
+		84B87A642F133C4000DE5E40 /* BrowseWorkoutsViewNew.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowseWorkoutsViewNew.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -104,6 +114,11 @@
 				842446E22EE15B7D0018DAA6 /* VinProWorkoutTrackerTests */,
 				842446EC2EE15B7D0018DAA6 /* VinProWorkoutTrackerUITests */,
 				842446D02EE15B790018DAA6 /* Products */,
+				843E15D82F1199E8009B5523 /* FEATURE_MANIFEST.md */,
+				843E15E02F131F70009B5523 /* PROJECT_MANIFEST.md */,
+				84B87A5E2F132D7200DE5E40 /* WorkoutCreationButtonRow.swift */,
+				84B87A602F132EC600DE5E40 /* CreateWorkoutView.swift */,
+				84B87A642F133C4000DE5E40 /* BrowseWorkoutsViewNew.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -237,6 +252,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				843E15E12F131F70009B5523 /* PROJECT_MANIFEST.md in Resources */,
+				843E15D92F1199E9009B5523 /* FEATURE_MANIFEST.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -262,6 +279,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				8490D0E62EECE3DC00351B1C /* WorkoutExportSupport.swift in Sources */,
+				84B87A612F132EC600DE5E40 /* CreateWorkoutView.swift in Sources */,
+				84B87A5F2F132D7200DE5E40 /* WorkoutCreationButtonRow.swift in Sources */,
+				84B87A652F133C4000DE5E40 /* BrowseWorkoutsViewNew.swift in Sources */,
 				8490D07A2EEA419200351B1C /* AppleSignInView.swift in Sources */,
 				8490D07E2EEA464400351B1C /* WelcomeView.swift in Sources */,
 			);
@@ -449,13 +469,17 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0;
+				MARKETING_VERSION = 4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.vinay.vinproworkouttracker;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -488,13 +512,17 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0;
+				MARKETING_VERSION = 4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.vinay.vinproworkouttracker;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};

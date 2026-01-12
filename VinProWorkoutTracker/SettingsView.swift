@@ -22,6 +22,7 @@ struct SettingsView: View {
                             AccountSettingsView()
                         } label: {
                             Label("Account", systemImage: "person.circle")
+                                .foregroundStyle(.primary)
                         }
                     }
                 }
@@ -50,6 +51,7 @@ struct SettingsView: View {
                             WorkoutSettingsView()
                         } label: {
                             Label("Workouts", systemImage: "figure.strengthtraining.traditional")
+                                .foregroundStyle(.primary)
                         }
                     }
                 }
@@ -60,6 +62,7 @@ struct SettingsView: View {
                             AppearanceSettingsView()
                         } label: {
                             Label("Appearance", systemImage: "paintbrush")
+                                .foregroundStyle(.primary)
                         }
                     }
                 }
@@ -69,7 +72,7 @@ struct SettingsView: View {
                         NavigationLink {
                             HealthSettingsView()
                         } label: {
-                            Label("Health & Fitness", systemImage: "heart.fill")
+                            Label("Apple Health", systemImage: "heart.fill")
                                 .foregroundStyle(.red)
                         }
                     }
@@ -81,6 +84,7 @@ struct SettingsView: View {
                             DataExportView()
                         } label: {
                             Label("Data Export & Backup", systemImage: "square.and.arrow.up")
+                                .foregroundStyle(.primary)
                         }
                     }
                 }
@@ -92,6 +96,7 @@ struct SettingsView: View {
                             HelpView()
                         } label: {
                             Label("Help & Support", systemImage: "questionmark.circle")
+                                .foregroundStyle(.primary)
                         }
                     }
                 }
@@ -104,6 +109,7 @@ struct SettingsView: View {
                                 PrivacyPolicyView()
                             } label: {
                                 Label("Privacy Policy", systemImage: "hand.raised")
+                                    .foregroundStyle(.primary)
                             }
                         }
                         
@@ -112,6 +118,7 @@ struct SettingsView: View {
                                 TermsOfServiceView()
                             } label: {
                                 Label("Terms of Service", systemImage: "doc.text")
+                                    .foregroundStyle(.primary)
                             }
                         }
                     }
@@ -153,9 +160,9 @@ struct SettingsView: View {
                     )
 
                 VStack(alignment: .leading) {
-                    Text("LiftSphere Workout")
+                    Text("LiftSphere")
                         .font(.headline)
-                    Text("Vin Edition • Designed by Vin")
+                    Text("Train smarter, track better.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -180,9 +187,9 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
             
-            Text("LiftSphere Workout – Vin Edition")
+            Text("LiftSphere")
                 .font(.headline)
-            Text("Workout tracking with analytics.")
+            Text("Train smarter, track better.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
@@ -471,24 +478,32 @@ struct AccountSettingsView: View {
                 if authManager.isAuthenticated {
                     // Signed in state
                     HStack(spacing: 12) {
-                        Image(systemName: "checkmark.circle.fill")
+                        Image(systemName: authManager.userEmail.isEmpty ? "person.circle.fill" : "checkmark.circle.fill")
                             .font(.title)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(authManager.userEmail.isEmpty ? .blue : .green)
                         
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Signed in with Apple")
-                                .font(.headline)
-                            
-                            if !authManager.userName.isEmpty {
-                                Text(authManager.userName)
+                            if authManager.userEmail.isEmpty {
+                                Text("Guest User")
+                                    .font(.headline)
+                                Text("Local account only")
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
-                            }
-                            
-                            if !authManager.userEmail.isEmpty {
-                                Text(authManager.userEmail)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                            } else {
+                                Text("Signed in with Apple")
+                                    .font(.headline)
+                                
+                                if !authManager.userName.isEmpty {
+                                    Text(authManager.userName)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
+                                
+                                if !authManager.userEmail.isEmpty {
+                                    Text(authManager.userEmail)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                         }
                     }

@@ -1,8 +1,8 @@
-# LiftSphere Workout - Version 1.0
+# LiftSphere - Version 1.0
 
-**Back-friendly workout tracking with powerful analytics**
+**Your friendly fitness companion with powerful analytics**
 
-LiftSphere Workout is a comprehensive fitness tracking app designed with a focus on back-friendly exercises and intelligent workout analytics. Track your progress, analyze muscle balance, and build strength safely.
+LiftSphere is a comprehensive fitness tracking app designed with a focus on smart exercises and intelligent workout analytics. Track your progress, analyze muscle balance, and build strength safely.
 
 ---
 
@@ -246,4 +246,4 @@ For support, questions, or feedback:
 
 ---
 
-**LiftSphere Workout - Build strength, track progress, protect your back.** 💪
+**LiftSphere - Build strength, track progress, protect your back.** 💪

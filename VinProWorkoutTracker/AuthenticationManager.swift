@@ -69,6 +69,18 @@ class AuthenticationManager {
         saveAuthState()
     }
     
+    // MARK: - Guest Mode
+    
+    func continueAsGuest() {
+        userID = "guest-\(UUID().uuidString)"
+        userName = "" // Will trigger name prompt
+        userEmail = ""
+        isAuthenticated = true
+        needsNamePrompt = true // User will be asked for their name
+        saveAuthState()
+        print("✅ User continued as guest")
+    }
+    
     // MARK: - Debug Helper (Simulator Only)
     
     #if targetEnvironment(simulator)

@@ -52,6 +52,35 @@ class HealthKitManager {
         return HKHealthStore.isHealthDataAvailable()
     }
     
+    // MARK: - Check Authorization Status
+    
+    func checkAuthorizationStatus() {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            isAuthorized = false
+            return
+        }
+        
+        // Check authorization status for multiple representative types
+        // We check several common types to see if any are authorized
+        let typesToCheck: [HKQuantityTypeIdentifier] = [
+            .bodyMass,
+            .stepCount,
+            .activeEnergyBurned,
+            .height
+        ]
+        
+        for typeIdentifier in typesToCheck {
+            let status = healthStore.authorizationStatus(for: HKQuantityType(typeIdentifier))
+            if status == .sharingAuthorized {
+                isAuthorized = true
+                return
+            }
+        }
+        
+        // If none are explicitly authorized, assume not authorized
+        isAuthorized = false
+    }
+    
     // MARK: - Request Authorization
     
     func requestAuthorization() async throws {

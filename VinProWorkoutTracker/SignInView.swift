@@ -49,6 +49,19 @@ struct SignInView: View {
                 .frame(height: 50)
                 .cornerRadius(10)
                 
+                // Continue as Guest Button
+                Button {
+                    authManager.continueAsGuest()
+                } label: {
+                    Text("Continue as Guest")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(10)
+                }
+                
                 #if targetEnvironment(simulator)
                 // DEBUG: Skip sign-in for simulator
                 Button {

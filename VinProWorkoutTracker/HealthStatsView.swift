@@ -9,6 +9,13 @@ struct HealthStatsView: View {
     @State private var showError = false
     @State private var errorMessage = ""
     
+    init() {
+        // Check authorization immediately on init
+        let manager = HealthKitManager()
+        manager.checkAuthorizationStatus()
+        _healthManager = State(initialValue: manager)
+    }
+    
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -25,7 +32,7 @@ struct HealthStatsView: View {
                 }
                 .padding()
             }
-            .navigationTitle("Health Stats")
+            .navigationTitle("Apple Health")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -46,6 +53,15 @@ struct HealthStatsView: View {
                         }
                         .disabled(isLoading)
                     }
+                }
+            }
+            .task {
+                // Check authorization status when view appears
+                healthManager.checkAuthorizationStatus()
+                
+                // If authorized, automatically load data
+                if healthManager.isAuthorized {
+                    await refreshData()
                 }
             }
             .alert("Error", isPresented: $showError) {
@@ -89,7 +105,7 @@ struct HealthStatsView: View {
                     )
                 )
             
-            Text("Connect to Health")
+            Text("Apple Health Integration")
                 .font(.title2.bold())
             
             Text("Allow access to your health data to see body composition, activity, and fitness metrics.")
@@ -103,7 +119,7 @@ struct HealthStatsView: View {
                     await requestAuthorization()
                 }
             } label: {
-                Label("Connect to Health App", systemImage: "heart.fill")
+                Label("Connect to Apple Health", systemImage: "heart.fill")
                     .font(.headline)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
@@ -221,7 +237,7 @@ struct HealthStatsView: View {
             
             // Heart & Fitness
             if healthManager.restingHeartRate != nil || healthManager.vo2Max != nil {
-                sectionCard(title: "Heart & Fitness", icon: "heart.fill", color: .red) {
+                sectionCard(title: "Apple Health Integration", icon: "heart.fill", color: .red) {
                     VStack(spacing: 12) {
                         if let rhr = healthManager.restingHeartRate {
                             statRow(label: "Resting Heart Rate", value: String(format: "%.0f bpm", rhr), icon: "heart")

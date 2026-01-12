@@ -70,8 +70,8 @@
 - [ ] Data collection description for App Store
 
 ### Metadata
-- [ ] App name finalized: "LiftSphere Workout"
-- [ ] Subtitle: "Back-Friendly Fitness Tracker"
+- [ ] App name finalized: "LiftSphere"
+- [ ] Subtitle: "Your friendly fitness companion"
 - [ ] Category: Health & Fitness
 - [ ] Keywords (max 100 characters):
   ```
@@ -86,7 +86,7 @@
 
 ### App Description Template
 ```
-LIFTSPHERE WORKOUT - YOUR BACK-FRIENDLY FITNESS COMPANION
+LIFTSPHERE - YOUR FRIENDLY FITNESS COMPANION
 
 Build strength safely with intelligent workout tracking and analytics.
 
@@ -139,7 +139,7 @@ Perfect for anyone who wants to:
 • Build strength progressively
 • Own their fitness data
 
-LiftSphere Workout helps you build strength while keeping your back safe. 
+LiftSphere helps you build strength while keeping your back safe. 
 Start your fitness journey today!
 
 Requires iOS 17.0 or later.

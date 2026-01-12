@@ -1,5 +1,4 @@
 import SwiftUI
-import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
 import HealthKit
@@ -17,9 +16,19 @@ struct ContentView: View {
     @AppStorage("showArchivedWorkouts") private var showArchivedWorkouts: Bool = false
     @AppStorage("confirmBeforeDelete") private var confirmBeforeDelete: Bool = true
 
-    @State private var showingNewWorkout = false
-    @State private var showingQuickRepeat = false
+    // Sheet presentation (using enum to avoid conflicts)
+    @State private var activeSheet: WorkoutSheet?
     @State private var selectedWorkoutToRepeat: Workout?
+    
+    enum WorkoutSheet: Identifiable {
+        case create
+        case quickRepeat
+        case browse
+        
+        var id: Int {
+            hashValue
+        }
+    }
 
     // Bulk selection
     @State private var isSelecting = false
@@ -103,17 +112,6 @@ struct ContentView: View {
                         }
                     }
                 }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    if !isSelecting {
-                        Button {
-                            showingNewWorkout = true
-                        } label: {
-                            Image(systemName: "plus")
-                        }
-                        .accessibilityLabel("Add Workout")
-                    }
-                }
             }
             .safeAreaInset(edge: .bottom) {
                 if isSelecting && !selectedWorkouts.isEmpty {
@@ -150,17 +148,24 @@ struct ContentView: View {
             .sheet(item: $shareItem) { item in
                 ActivityView(activityItems: [item.url])
             }
-            .sheet(isPresented: $showingNewWorkout) {
-                NewWorkoutView()
-            }
-            .sheet(isPresented: $showingQuickRepeat) {
-                QuickRepeatSheet(
-                    workouts: visibleWorkouts.prefix(10).map { $0 },
-                    isPresented: $showingQuickRepeat,
-                    onSelect: { workout in
-                        repeatWorkout(workout)
-                    }
-                )
+            .sheet(item: $activeSheet) { sheet in
+                switch sheet {
+                case .create:
+                    CreateWorkoutView()
+                case .quickRepeat:
+                    QuickRepeatSheet(
+                        workouts: visibleWorkouts.prefix(10).map { $0 },
+                        isPresented: Binding(
+                            get: { activeSheet == .quickRepeat },
+                            set: { if !$0 { activeSheet = nil } }
+                        ),
+                        onSelect: { workout in
+                            repeatWorkout(workout)
+                        }
+                    )
+                case .browse:
+                    BrowseWorkoutsViewNew()
+                }
             }
             .alert("Delete Workout?",
                    isPresented: Binding(
@@ -215,6 +220,7 @@ struct ContentView: View {
                             Text("Archive")
                                 .font(.caption)
                         }
+                        .foregroundStyle(.blue)
                     }
                     .disabled(selectedWorkouts.isEmpty)
                     
@@ -227,6 +233,7 @@ struct ContentView: View {
                             Text("Unarchive")
                                 .font(.caption)
                         }
+                        .foregroundStyle(.blue)
                     }
                     .disabled(selectedWorkouts.isEmpty)
                     
@@ -239,6 +246,7 @@ struct ContentView: View {
                             Text("Export")
                                 .font(.caption)
                         }
+                        .foregroundStyle(.blue)
                     }
                     .disabled(selectedWorkouts.isEmpty)
                     
@@ -286,9 +294,11 @@ struct ContentView: View {
                 Text(showArchivedWorkouts ? "No Archived Workouts" : "No Workouts Yet")
                     .font(.title2.bold())
                 
-                Text(showArchivedWorkouts ? 
-                     "Your archived workouts will appear here" : 
-                     "Tap the + button to create your first workout")
+                let emptyMessage = showArchivedWorkouts ? 
+                    "Your archived workouts will appear here" : 
+                    "Use the buttons below to create your first workout"
+                
+                Text(emptyMessage)
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -297,7 +307,7 @@ struct ContentView: View {
             
             if !showArchivedWorkouts {
                 Button {
-                    showingNewWorkout = true
+                    activeSheet = .create
                 } label: {
                     Label("Create Workout", systemImage: "plus.circle.fill")
                         .font(.headline)
@@ -324,40 +334,21 @@ struct ContentView: View {
     
     private var workoutListView: some View {
         List {
-            // QUICK REPEAT SECTION
+            // WORKOUT CREATION BUTTONS
             Section {
-                Button {
-                    showingQuickRepeat = true
-                } label: {
-                    HStack {
-                        Image(systemName: "arrow.counterclockwise.circle.fill")
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [.blue, .purple],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .font(.title3)
-                        
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Quick Repeat")
-                                .font(.headline)
-                                .foregroundColor(.primary)
-                            
-                            Text("Repeat a recent workout")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        
-                        Spacer()
-                        
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(.secondary)
-                            .font(.caption)
+                WorkoutCreationButtonRow(
+                    onCreateWorkout: {
+                        activeSheet = .create
+                    },
+                    onRepeatRecent: {
+                        activeSheet = .quickRepeat
+                    },
+                    onBrowseWorkouts: {
+                        activeSheet = .browse
                     }
-                    .padding(.vertical, 4)
-                }
+                )
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
             }
             
             // THIS WEEK
@@ -865,7 +856,7 @@ private struct QuickRepeatSheet: View {
                             onSelect(workout)
                             isPresented = false
                         } label: {
-                            HStack {
+                            HStack(spacing: 12) {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(workout.name)
                                         .font(.headline)
@@ -876,21 +867,25 @@ private struct QuickRepeatSheet: View {
                                             .font(.caption)
                                             .foregroundColor(.secondary)
                                         
+                                        if !workout.sets.isEmpty {
+                                            Text("•")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                            
+                                            Text("\(workout.sets.count) sets")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        }
+                                        
                                         if workout.totalVolume > 0 {
                                             Text("•")
                                                 .font(.caption)
                                                 .foregroundColor(.secondary)
                                             
-                                            Text("Vol: \(Int(workout.totalVolume))")
+                                            Text("\(formatVolume(workout.totalVolume)) kg")
                                                 .font(.caption)
                                                 .foregroundColor(.secondary)
                                         }
-                                    }
-                                    
-                                    if !workout.mainExercises.isEmpty {
-                                        Text("\(workout.mainExercises.count) exercises")
-                                            .font(.caption2)
-                                            .foregroundColor(.secondary)
                                     }
                                 }
                                 
@@ -901,13 +896,15 @@ private struct QuickRepeatSheet: View {
                                     .font(.title2)
                             }
                             .padding(.vertical, 4)
+                            .contentShape(Rectangle())
                         }
+                        .buttonStyle(.plain)
                     }
                 } header: {
                     Text("Select a workout to repeat")
                 }
             }
-            .navigationTitle("Quick Repeat")
+            .navigationTitle("Repeat Recent Workout")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -918,6 +915,15 @@ private struct QuickRepeatSheet: View {
             }
         }
     }
+    
+    private func formatVolume(_ volume: Double) -> String {
+        if volume >= 1000 {
+            return String(format: "%.1fK", volume / 1000)
+        } else {
+            return String(format: "%.0f", volume)
+        }
+    }
 }
+
 
 
