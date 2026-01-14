@@ -134,7 +134,7 @@ struct ProfileView: View {
 
                         VStack(alignment: .leading, spacing: 8) {
                             // Name
-                            Text(displayName.lowercased())
+                            Text(displayName)
                                 .font(.title2.weight(.semibold))
 
                             // Stats row

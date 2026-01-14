@@ -7,17 +7,20 @@ class SetEntry {
     var weight: Double
     var reps: Int
     var timestamp: Date
+    var isOneRepMax: Bool = false  // Flag for actual 1RM tests
 
     init(
         exerciseName: String,
         weight: Double,
         reps: Int,
-        timestamp: Date = Date()
+        timestamp: Date = Date(),
+        isOneRepMax: Bool = false
     ) {
         self.exerciseName = exerciseName
         self.weight = weight
         self.reps = reps
         self.timestamp = timestamp
+        self.isOneRepMax = isOneRepMax
     }
     
     /// Calculate the volume (weight × reps) for this set

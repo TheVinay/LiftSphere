@@ -26,7 +26,7 @@ struct SignInView: View {
             }
             
             VStack(spacing: 12) {
-                Text("VinPro Workout Tracker")
+                Text("LiftSphere Workout Tracker")
                     .font(.title.bold())
                 
                 Text("Track your workouts, build muscle, and achieve your fitness goals")

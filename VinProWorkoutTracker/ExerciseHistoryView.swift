@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct ExerciseHistoryView: View {
     @Environment(\.modelContext) private var context
@@ -21,6 +22,18 @@ struct ExerciseHistoryView: View {
     
     // Expandable exercise info section
     @State private var isExerciseInfoExpanded: Bool = false
+    
+    // Expandable all sets history
+    @State private var isAllSetsExpanded: Bool = false
+    
+    // Edit mode
+    @State private var editingSet: SetEntry? = nil
+    @State private var editWeight: String = ""
+    @State private var editReps: String = ""
+    
+    // 1RM tracking
+    @State private var showLog1RM: Bool = false
+    @State private var oneRMWeight: String = ""
 
     // MARK: - Derived sets
 
@@ -42,6 +55,16 @@ struct ExerciseHistoryView: View {
         setsForExercise
             .map { estimated1RM(weight: $0.weight, reps: $0.reps) }
             .max() ?? 0
+    }
+    
+    // MARK: - 1RM Tracking
+    
+    private var tested1RM: SetEntry? {
+        setsForExercise.filter { $0.isOneRepMax }.max(by: { $0.weight < $1.weight })
+    }
+    
+    private var estimated1RM: Double {
+        best1RMSoFar
     }
 
     // MARK: - Body
@@ -116,7 +139,7 @@ struct ExerciseHistoryView: View {
                         .fill(Color.yellow.opacity(0.15))
                 )
             }
-
+            
             // Add set
             Section("Add set") {
                 Text(exerciseName)
@@ -148,24 +171,161 @@ struct ExerciseHistoryView: View {
                             Spacer()
                             Text("\(formatWeight(set.weight)) x \(set.reps)")
                         }
-                    }
-                }
-            }
-
-            // All-time history
-            Section("All sets (all workouts)") {
-                if setsForExercise.isEmpty {
-                    Text("No sets logged yet.")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(setsForExercise) { set in
-                        HStack {
-                            Text(set.timestamp.formatted(date: .abbreviated, time: .shortened))
-                            Spacer()
-                            Text("\(formatWeight(set.weight)) x \(set.reps)")
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            startEditing(set)
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                deleteSet(set)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                            Button {
+                                repeatSet(set)
+                            } label: {
+                                Label("Repeat", systemImage: "arrow.counterclockwise")
+                            }
+                            .tint(.green)
+                            
+                            Button {
+                                startEditing(set)
+                            } label: {
+                                Label("Edit", systemImage: "pencil")
+                            }
+                            .tint(.blue)
                         }
                     }
                 }
+            }
+            
+            // 1RM Section (moved below "This workout")
+            Section {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Image(systemName: "bolt.fill")
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.orange, .red],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .font(.title2)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("1 Rep Max")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            
+                            HStack(spacing: 16) {
+                                // Estimated
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Estimated")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                    Text(estimated1RM > 0 ? "\(formatWeight(estimated1RM)) lbs" : "—")
+                                        .font(.subheadline.bold())
+                                }
+                                
+                                // Tested
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Tested")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                    if let tested = tested1RM {
+                                        Text("\(formatWeight(tested.weight)) lbs")
+                                            .font(.subheadline.bold())
+                                            .foregroundStyle(
+                                                LinearGradient(
+                                                    colors: [.orange, .red],
+                                                    startPoint: .leading,
+                                                    endPoint: .trailing
+                                                )
+                                            )
+                                    } else {
+                                        Text("—")
+                                            .font(.subheadline.bold())
+                                    }
+                                }
+                            }
+                        }
+                        
+                        Spacer()
+                        
+                        Button {
+                            showLog1RM = true
+                            oneRMWeight = tested1RM != nil ? String(tested1RM!.weight) : ""
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.title2)
+                                .foregroundStyle(.blue)
+                        }
+                    }
+                    
+                    // Show date of tested 1RM if available
+                    if let tested = tested1RM {
+                        Text("Logged \(tested.timestamp.formatted(date: .abbreviated, time: .omitted))")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+
+            // All-time history (Collapsible)
+            Section {
+                DisclosureGroup(
+                    isExpanded: $isAllSetsExpanded
+                ) {
+                    if setsForExercise.isEmpty {
+                        Text("No sets logged yet.")
+                            .foregroundStyle(.secondary)
+                            .padding(.vertical, 4)
+                    } else {
+                        ForEach(setsForExercise) { set in
+                            HStack {
+                                Text(set.timestamp.formatted(date: .abbreviated, time: .shortened))
+                                Spacer()
+                                Text("\(formatWeight(set.weight)) x \(set.reps)")
+                            }
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                startEditing(set)
+                            }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    deleteSet(set)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                            .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                                Button {
+                                    startEditing(set)
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+                                .tint(.blue)
+                            }
+                        }
+                    }
+                } label: {
+                    HStack {
+                        Text("Logged Workouts")
+                            .font(.headline)
+                        
+                        Spacer()
+                        
+                        Text("\(setsForExercise.count)")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            } header: {
+                Text("Historical Data")
             }
             
             // Exercise Information (Expandable)
@@ -256,6 +416,155 @@ struct ExerciseHistoryView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Done") {
                     dismiss()
+                }
+            }
+        }
+        .sheet(item: $editingSet) { set in
+            NavigationStack {
+                Form {
+                    Section("Edit Set") {
+                        TextField("Weight", text: $editWeight)
+                            .keyboardType(.decimalPad)
+                        
+                        TextField("Reps", text: $editReps)
+                            .keyboardType(.numberPad)
+                    }
+                }
+                .navigationTitle("Edit Set")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            editingSet = nil
+                        }
+                    }
+                    
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Save") {
+                            saveEdit(set)
+                        }
+                        .disabled(editWeight.isEmpty || editReps.isEmpty)
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showLog1RM) {
+            NavigationStack {
+                Form {
+                    Section {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Log your actual 1 rep max test")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            
+                            TextField("Weight", text: $oneRMWeight)
+                                .keyboardType(.decimalPad)
+                                .font(.title2)
+                        }
+                    } header: {
+                        Text("1 Rep Max Test")
+                    } footer: {
+                        Text("This will be saved as your tested 1RM, separate from estimated values.")
+                    }
+                }
+                .navigationTitle(exerciseName)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            showLog1RM = false
+                        }
+                    }
+                    
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Save") {
+                            log1RM()
+                        }
+                        .disabled(oneRMWeight.isEmpty)
+                        .fontWeight(.semibold)
+                    }
+                }
+            }
+        }
+    }
+    
+    // MARK: - Edit & Delete Methods
+    
+    private func startEditing(_ set: SetEntry) {
+        editWeight = String(set.weight)
+        editReps = String(set.reps)
+        editingSet = set
+    }
+    
+    private func saveEdit(_ set: SetEntry) {
+        guard let weight = Double(editWeight),
+              let reps = Int(editReps),
+              reps > 0 else { return }
+        
+        set.weight = weight
+        set.reps = reps
+        try? context.save()
+        
+        editingSet = nil
+    }
+    
+    private func deleteSet(_ set: SetEntry) {
+        // Remove from workout's sets array if it's part of this workout
+        if let index = workout.sets.firstIndex(where: { $0.id == set.id }) {
+            workout.sets.remove(at: index)
+        }
+        
+        // Delete from context
+        context.delete(set)
+        try? context.save()
+    }
+    
+    private func repeatSet(_ set: SetEntry) {
+        // Create a new set with the same weight and reps
+        let newSet = SetEntry(
+            exerciseName: exerciseName,
+            weight: set.weight,
+            reps: set.reps
+        )
+        
+        workout.sets.append(newSet)
+        context.insert(newSet)
+        try? context.save()
+        
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+    }
+    
+    private func log1RM() {
+        guard let weight = Double(oneRMWeight), weight > 0 else { return }
+        
+        // Create a 1RM set entry (reps = 1, marked as 1RM test)
+        let oneRMSet = SetEntry(
+            exerciseName: exerciseName,
+            weight: weight,
+            reps: 1,
+            isOneRepMax: true
+        )
+        
+        workout.sets.append(oneRMSet)
+        context.insert(oneRMSet)
+        try? context.save()
+        
+        // Haptic feedback
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+        
+        // Close sheet
+        showLog1RM = false
+        oneRMWeight = ""
+        
+        // Show PR banner if it's a new PR
+        if weight > (tested1RM?.weight ?? 0) {
+            prMessage = "New 1RM PR! 🔥"
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                withAnimation {
+                    prMessage = nil
                 }
             }
         }

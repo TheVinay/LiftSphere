@@ -13,7 +13,6 @@ struct ContentView: View {
     @State private var healthKitManager = HealthKitManager()
     
     // Settings
-    @AppStorage("showArchivedWorkouts") private var showArchivedWorkouts: Bool = false
     @AppStorage("confirmBeforeDelete") private var confirmBeforeDelete: Bool = true
 
     // Sheet presentation (using enum to avoid conflicts)
@@ -45,7 +44,7 @@ struct ContentView: View {
     @State private var showingBulkDeleteConfirmation = false
 
     private var visibleWorkouts: [Workout] {
-        showArchivedWorkouts ? workouts : workouts.filter { !$0.isArchived }
+        workouts.filter { !$0.isArchived }
     }
 
     var body: some View {
@@ -291,40 +290,34 @@ struct ContentView: View {
                 )
             
             VStack(spacing: 8) {
-                Text(showArchivedWorkouts ? "No Archived Workouts" : "No Workouts Yet")
+                Text("No Workouts Yet")
                     .font(.title2.bold())
                 
-                let emptyMessage = showArchivedWorkouts ? 
-                    "Your archived workouts will appear here" : 
-                    "Use the buttons below to create your first workout"
-                
-                Text(emptyMessage)
+                Text("Create your first workout to get started")
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
             }
             
-            if !showArchivedWorkouts {
-                Button {
-                    activeSheet = .create
-                } label: {
-                    Label("Create Workout", systemImage: "plus.circle.fill")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 32)
-                        .padding(.vertical, 16)
-                        .background(
-                            LinearGradient(
-                                colors: [.blue, .purple],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
+            Button {
+                activeSheet = .create
+            } label: {
+                Label("Create Workout", systemImage: "plus.circle.fill")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 32)
+                    .padding(.vertical, 16)
+                    .background(
+                        LinearGradient(
+                            colors: [.blue, .purple],
+                            startPoint: .leading,
+                            endPoint: .trailing
                         )
-                        .cornerRadius(16)
-                }
-                .padding(.top, 8)
+                    )
+                    .cornerRadius(16)
             }
+            .padding(.top, 8)
             
             Spacer()
         }
