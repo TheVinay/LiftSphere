@@ -300,14 +300,21 @@ struct ContentView: View {
                     .padding(.horizontal, 40)
             }
             
-            Button {
-                activeSheet = .create
-            } label: {
-                Label("Create Workout", systemImage: "plus.circle.fill")
-                    .font(.headline)
+            VStack(spacing: 12) {
+                // Primary: Create Workout
+                Button {
+                    activeSheet = .create
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title3)
+                        
+                        Text("Create Workout")
+                            .font(.headline)
+                    }
+                    .frame(maxWidth: .infinity)
                     .foregroundColor(.white)
-                    .padding(.horizontal, 32)
-                    .padding(.vertical, 16)
+                    .padding(.vertical, 14)
                     .background(
                         LinearGradient(
                             colors: [.blue, .purple],
@@ -315,8 +322,34 @@ struct ContentView: View {
                             endPoint: .trailing
                         )
                     )
-                    .cornerRadius(16)
+                    .cornerRadius(12)
+                }
+                .buttonStyle(.plain)
+                
+                // Secondary: Browse Workouts
+                Button {
+                    activeSheet = .browse
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "folder")
+                            .font(.subheadline)
+                        
+                        Text("Browse Workouts")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(Color.clear)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.blue, lineWidth: 1.5)
+                    )
+                    .foregroundColor(.blue)
+                }
+                .buttonStyle(.plain)
             }
+            .padding(.horizontal, 40)
             .padding(.top, 8)
             
             Spacer()

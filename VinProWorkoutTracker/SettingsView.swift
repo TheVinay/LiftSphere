@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import CloudKit
+import AuthenticationServices
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
@@ -478,12 +479,12 @@ struct AccountSettingsView: View {
                 if authManager.isAuthenticated {
                     // Signed in state
                     HStack(spacing: 12) {
-                        Image(systemName: authManager.userEmail.isEmpty ? "person.circle.fill" : "checkmark.circle.fill")
+                        Image(systemName: authManager.userID.hasPrefix("guest-") ? "person.circle.fill" : "checkmark.circle.fill")
                             .font(.title)
-                            .foregroundStyle(authManager.userEmail.isEmpty ? .blue : .green)
+                            .foregroundStyle(authManager.userID.hasPrefix("guest-") ? .blue : .green)
                         
                         VStack(alignment: .leading, spacing: 4) {
-                            if authManager.userEmail.isEmpty {
+                            if authManager.userID.hasPrefix("guest-") {
                                 Text("Guest User")
                                     .font(.headline)
                                 Text("Local account only")
@@ -546,40 +547,105 @@ struct AccountSettingsView: View {
                 }
             }
             
-            // Actions Section (only show when signed in)
+            // Actions Section
             if authManager.isAuthenticated {
-                Section {
-                    Button(role: .destructive) {
-                        authManager.signOut()
-                    } label: {
-                        Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
+                if authManager.userID.hasPrefix("guest-") {
+                    // Guest user - show option to sign in with Apple
+                    Section {
+                        Button {
+                            showAppleSignIn = true
+                        } label: {
+                            Label("Sign in with Apple", systemImage: "applelogo")
+                        }
+                        .buttonStyle(.borderedProminent)
+                    } footer: {
+                        Text("Sign in with Apple to sync your workouts across all your devices and back them up to iCloud.")
                     }
-                } footer: {
-                    Text("Signing out will keep your local data but stop syncing until you sign in again.")
-                }
-                
-                // Danger Zone
-                Section {
-                    Button(role: .destructive) {
-                        showDeleteAccountConfirmation = true
-                    } label: {
-                        Label("Delete Account", systemImage: "trash")
+                } else {
+                    // Apple ID user - show sign out and delete options
+                    Section {
+                        Button(role: .destructive) {
+                            authManager.signOut()
+                        } label: {
+                            Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
+                        }
+                    } footer: {
+                        Text("Signing out will keep your local data but stop syncing until you sign in again.")
                     }
-                } header: {
-                    Text("Danger Zone")
-                } footer: {
-                    Text("This will permanently delete your account and all associated data from our servers. This action cannot be undone.")
+                    
+                    // Danger Zone
+                    Section {
+                        Button(role: .destructive) {
+                            showDeleteAccountConfirmation = true
+                        } label: {
+                            Label("Delete Account", systemImage: "trash")
+                        }
+                    } header: {
+                        Text("Danger Zone")
+                    } footer: {
+                        Text("This will permanently delete your account and all associated data from our servers. This action cannot be undone.")
+                    }
                 }
             }
         }
         .navigationTitle("Account")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showAppleSignIn) {
-            AppleSignInView { name in
-                storedDisplayName = name
-                isSignedIn = true
-                didChooseLogin = true
-                showAppleSignIn = false
+            NavigationStack {
+                VStack(spacing: 24) {
+                    Spacer()
+                    
+                    // App Icon
+                    ZStack {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [.blue, .purple],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 100, height: 100)
+                        
+                        Image(systemName: "figure.strengthtraining.traditional")
+                            .font(.system(size: 50))
+                            .foregroundColor(.white)
+                    }
+                    
+                    VStack(spacing: 8) {
+                        Text("Sign in with Apple")
+                            .font(.title.bold())
+                        Text("Sync your workouts across all your devices")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
+                    }
+                    
+                    SignInWithAppleButton(.signIn) { request in
+                        request.requestedScopes = [.fullName, .email]
+                    } onCompletion: { result in
+                        authManager.handleSignInWithApple(result: result)
+                        showAppleSignIn = false
+                    }
+                    .signInWithAppleButtonStyle(.black)
+                    .frame(height: 50)
+                    .cornerRadius(10)
+                    .padding(.horizontal, 32)
+                    
+                    Text("Your workouts will be backed up to iCloud")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
+                    Spacer()
+                }
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            showAppleSignIn = false
+                        }
+                    }
+                }
             }
         }
         .confirmationDialog(

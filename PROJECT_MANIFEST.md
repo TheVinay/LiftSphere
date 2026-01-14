@@ -1,10 +1,24 @@
 # VinPro / LiftSphere - Complete Project Manifest
 
-**Last Updated:** January 10, 2026  
-**Manifest Version:** 2.1  
+**Last Updated:** January 13, 2026  
+**Manifest Version:** 2.2  
 **Purpose:** Comprehensive documentation of all files, features, models, and cross-references
 
-**🆕 LATEST UPDATES (January 10, 2026):**
+**🆕 LATEST UPDATES (January 13, 2026):**
+- **AUTHENTICATION UX FIXES:**
+  - Fixed "Guest User" incorrectly showing when signed in with Apple ID
+  - Changed detection logic from `userEmail.isEmpty` to `userID.hasPrefix("guest-")`
+  - Guest users now see "Sign in with Apple" button in Account Settings (not "Sign Out")
+  - Apple ID users see "Sign Out" and "Delete Account" options
+  - Updated sign-in sheet to use AuthenticationManager properly
+  - Added AuthenticationServices import to SettingsView
+- **EMPTY STATE IMPROVEMENTS:**
+  - Added "Browse Workouts" button to empty state in ContentView
+  - First-time users now see both "Create Workout" (primary) and "Browse Workouts" (secondary) options
+  - Matches the button styling from WorkoutCreationButtonRow
+  - Makes it easier for new users to discover pre-made workout templates
+
+**Previous Updates (January 10, 2026):**
 - **DARK MODE SUPPORT:** Complete dark mode implementation across all views
 - Fixed icon and text colors in SettingsView (all labels now use `.foregroundStyle(.primary)`)
 - Fixed bulk action buttons in ContentView (Archive, Unarchive, Export now blue)
@@ -453,7 +467,11 @@
    - "Last Week" section
    - Monthly sections for older workouts (grouped, sorted descending)
    - Quick Repeat button at top
-   - Empty state view with gradient icon
+   - Empty state view with:
+     - Gradient icon
+     - "Create Workout" button (primary, gradient)
+     - "Browse Workouts" button (secondary, blue outline)
+     - Matches WorkoutCreationButtonRow styling
 
 2. **Bulk Selection Mode:**
    - Toggle via "Select" button
@@ -969,7 +987,7 @@
 
 ## SETTINGS & CONFIGURATION
 
-### SettingsView.swift (1142 lines)
+### SettingsView.swift (1157 lines)
 - **Purpose:** Master settings hub with searchable navigation
 - **State:** `@State syncMonitor: CloudKitSyncMonitor`, `searchText: String`
 
@@ -997,6 +1015,7 @@
 - **Conditional display** - Sections hidden if search doesn't match
 - **Search keywords** - Each section has associated keywords (e.g., "Account", "iCloud", "Export", etc.)
 - **Done button** - Dismisses settings sheet
+
 #### COMPONENTS:
 - **CloudKitDebugView** - Comprehensive CloudKit diagnostics tool
   - Container identifier display
@@ -1006,6 +1025,54 @@
   - Error handling with helpful suggestions
   - Tests UserProfile record type query
   - Provides CloudKit Dashboard link
+
+---
+
+### AccountSettingsView
+- **Purpose:** Account authentication status and management
+- **State:**
+  - `@Environment(AuthenticationManager.self)` - Auth state
+  - `@AppStorage` for legacy settings
+  - `showAppleSignIn`, `showDeleteAccountConfirmation`
+
+#### SECTIONS:
+
+1. **Account Status Section:**
+   - **Guest Users** (detected by `userID.hasPrefix("guest-")`):
+     - Blue person icon
+     - "Guest User" headline
+     - "Local account only" subheadline
+   - **Apple ID Users:**
+     - Green checkmark icon
+     - "Signed in with Apple" headline
+     - User name (if available)
+     - Email address (if available)
+
+2. **Actions Section:**
+   - **For Guest Users:**
+     - "Sign in with Apple" button (prominent blue)
+     - Footer: "Sign in with Apple to sync your workouts across all your devices and back them up to iCloud."
+   - **For Apple ID Users:**
+     - "Sign Out" button (destructive)
+     - Footer: "Signing out will keep your local data but stop syncing until you sign in again."
+     - **Danger Zone Section:**
+       - "Delete Account" button (destructive)
+       - Warning about permanent deletion
+
+#### SIGN-IN SHEET:
+- NavigationStack with custom UI
+- App icon (gradient circle)
+- "Sign in with Apple" title
+- `SignInWithAppleButton` with `.black` style
+- Integrates with `AuthenticationManager.handleSignInWithApple()`
+- Cancel button in toolbar
+- Auto-dismisses on successful sign-in
+
+#### KEY LOGIC:
+- Uses `userID.hasPrefix("guest-")` to detect guest users (not `userEmail.isEmpty`)
+- Prevents showing "Sign Out" to guest users
+- Allows guest → Apple ID upgrade path
+- Properly dismisses sheet after sign-in
 
 ---
 
