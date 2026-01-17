@@ -220,6 +220,7 @@ struct WorkoutCard: View {
     NavigationStack {
         UserProfileView(
             user: UserProfile(
+                appleUserID: "preview-user-id",
                 username: "johndoe",
                 displayName: "John Doe",
                 bio: "Fitness enthusiast and weightlifting lover",

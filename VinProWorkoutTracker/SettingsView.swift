@@ -28,6 +28,17 @@ struct SettingsView: View {
                     }
                 }
                 
+                if searchText.isEmpty || matchesSearch("Social Privacy Friends") {
+                    Section {
+                        NavigationLink {
+                            SocialPrivacySettingsView()
+                        } label: {
+                            Label("Social Privacy", systemImage: "hand.raised")
+                                .foregroundStyle(.primary)
+                        }
+                    }
+                }
+                
                 if searchText.isEmpty || matchesSearch("Data Sync iCloud") {
                     Section {
                         NavigationLink {

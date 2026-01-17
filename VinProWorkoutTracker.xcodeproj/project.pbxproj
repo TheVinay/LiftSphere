@@ -12,6 +12,12 @@
 		8490D07A2EEA419200351B1C /* AppleSignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8490D0792EEA419200351B1C /* AppleSignInView.swift */; };
 		8490D07E2EEA464400351B1C /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8490D07D2EEA464400351B1C /* WelcomeView.swift */; };
 		8490D0E62EECE3DC00351B1C /* WorkoutExportSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8490D0E52EECE3DC00351B1C /* WorkoutExportSupport.swift */; };
+		84A9652A2F1832E400AAC855 /* SocialPrivacySettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A965292F1832E400AAC855 /* SocialPrivacySettings.swift */; };
+		84A9652C2F1832FA00AAC855 /* SocialPrivacySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A9652B2F1832FA00AAC855 /* SocialPrivacySettingsView.swift */; };
+		84A9652E2F18333900AAC855 /* SOCIAL_IMPLEMENTATION_ROADMAP.md in Resources */ = {isa = PBXBuildFile; fileRef = 84A9652D2F18333900AAC855 /* SOCIAL_IMPLEMENTATION_ROADMAP.md */; };
+		84A965302F18B37800AAC855 /* SOCIAL_STATUS_REPORT.md in Resources */ = {isa = PBXBuildFile; fileRef = 84A9652F2F18B37800AAC855 /* SOCIAL_STATUS_REPORT.md */; };
+		84A965322F18B76200AAC855 /* END_OF_DAY_SUMMARY.md in Resources */ = {isa = PBXBuildFile; fileRef = 84A965312F18B76200AAC855 /* END_OF_DAY_SUMMARY.md */; };
+		84A965342F18B77E00AAC855 /* QUICK_START_NEXT_SESSION.md in Resources */ = {isa = PBXBuildFile; fileRef = 84A965332F18B77E00AAC855 /* QUICK_START_NEXT_SESSION.md */; };
 		84B87A5F2F132D7200DE5E40 /* WorkoutCreationButtonRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B87A5E2F132D7200DE5E40 /* WorkoutCreationButtonRow.swift */; };
 		84B87A612F132EC600DE5E40 /* CreateWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B87A602F132EC600DE5E40 /* CreateWorkoutView.swift */; };
 		84B87A652F133C4000DE5E40 /* BrowseWorkoutsViewNew.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B87A642F133C4000DE5E40 /* BrowseWorkoutsViewNew.swift */; };
@@ -43,6 +49,12 @@
 		8490D0792EEA419200351B1C /* AppleSignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInView.swift; sourceTree = "<group>"; };
 		8490D07D2EEA464400351B1C /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		8490D0E52EECE3DC00351B1C /* WorkoutExportSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutExportSupport.swift; sourceTree = "<group>"; };
+		84A965292F1832E400AAC855 /* SocialPrivacySettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialPrivacySettings.swift; sourceTree = "<group>"; };
+		84A9652B2F1832FA00AAC855 /* SocialPrivacySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialPrivacySettingsView.swift; sourceTree = "<group>"; };
+		84A9652D2F18333900AAC855 /* SOCIAL_IMPLEMENTATION_ROADMAP.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = SOCIAL_IMPLEMENTATION_ROADMAP.md; sourceTree = "<group>"; };
+		84A9652F2F18B37800AAC855 /* SOCIAL_STATUS_REPORT.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = SOCIAL_STATUS_REPORT.md; sourceTree = "<group>"; };
+		84A965312F18B76200AAC855 /* END_OF_DAY_SUMMARY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = END_OF_DAY_SUMMARY.md; sourceTree = "<group>"; };
+		84A965332F18B77E00AAC855 /* QUICK_START_NEXT_SESSION.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = QUICK_START_NEXT_SESSION.md; sourceTree = "<group>"; };
 		84B87A5E2F132D7200DE5E40 /* WorkoutCreationButtonRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCreationButtonRow.swift; sourceTree = "<group>"; };
 		84B87A602F132EC600DE5E40 /* CreateWorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateWorkoutView.swift; sourceTree = "<group>"; };
 		84B87A642F133C4000DE5E40 /* BrowseWorkoutsViewNew.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowseWorkoutsViewNew.swift; sourceTree = "<group>"; };
@@ -119,6 +131,12 @@
 				84B87A5E2F132D7200DE5E40 /* WorkoutCreationButtonRow.swift */,
 				84B87A602F132EC600DE5E40 /* CreateWorkoutView.swift */,
 				84B87A642F133C4000DE5E40 /* BrowseWorkoutsViewNew.swift */,
+				84A965292F1832E400AAC855 /* SocialPrivacySettings.swift */,
+				84A9652B2F1832FA00AAC855 /* SocialPrivacySettingsView.swift */,
+				84A9652D2F18333900AAC855 /* SOCIAL_IMPLEMENTATION_ROADMAP.md */,
+				84A9652F2F18B37800AAC855 /* SOCIAL_STATUS_REPORT.md */,
+				84A965312F18B76200AAC855 /* END_OF_DAY_SUMMARY.md */,
+				84A965332F18B77E00AAC855 /* QUICK_START_NEXT_SESSION.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -253,7 +271,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				843E15E12F131F70009B5523 /* PROJECT_MANIFEST.md in Resources */,
+				84A965342F18B77E00AAC855 /* QUICK_START_NEXT_SESSION.md in Resources */,
+				84A965322F18B76200AAC855 /* END_OF_DAY_SUMMARY.md in Resources */,
+				84A9652E2F18333900AAC855 /* SOCIAL_IMPLEMENTATION_ROADMAP.md in Resources */,
 				843E15D92F1199E9009B5523 /* FEATURE_MANIFEST.md in Resources */,
+				84A965302F18B37800AAC855 /* SOCIAL_STATUS_REPORT.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -278,10 +300,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				84A9652A2F1832E400AAC855 /* SocialPrivacySettings.swift in Sources */,
 				8490D0E62EECE3DC00351B1C /* WorkoutExportSupport.swift in Sources */,
 				84B87A612F132EC600DE5E40 /* CreateWorkoutView.swift in Sources */,
 				84B87A5F2F132D7200DE5E40 /* WorkoutCreationButtonRow.swift in Sources */,
 				84B87A652F133C4000DE5E40 /* BrowseWorkoutsViewNew.swift in Sources */,
+				84A9652C2F1832FA00AAC855 /* SocialPrivacySettingsView.swift in Sources */,
 				8490D07A2EEA419200351B1C /* AppleSignInView.swift in Sources */,
 				8490D07E2EEA464400351B1C /* WelcomeView.swift in Sources */,
 			);

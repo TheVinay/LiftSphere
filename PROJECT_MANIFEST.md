@@ -1,10 +1,46 @@
 # VinPro / LiftSphere - Complete Project Manifest
 
-**Last Updated:** January 13, 2026  
-**Manifest Version:** 2.2  
+**Last Updated:** January 14, 2026 (Late Evening)  
+**Manifest Version:** 2.5  
 **Purpose:** Comprehensive documentation of all files, features, models, and cross-references
 
-**🆕 LATEST UPDATES (January 13, 2026):**
+**🆕 LATEST UPDATES (January 14, 2026 - Late Evening):**
+- **SOCIAL MODELS COMPLETION:**
+  - ✅ Added FollowRelationship model to SocialModels.swift (was missing!)
+  - ✅ Documented complete social data model architecture
+  - ✅ Added comprehensive SocialService documentation to manifest
+  - ✅ Clarified distinction between FollowRelationship (active) and FriendRelationship (legacy)
+  - ✅ Documented Apple ID integration system with caching
+  - ✅ Documented CloudKit schema requirements
+  - 🔧 Fixed: "Cannot find 'FollowRelationship' in scope" error in SocialService.swift
+  - 📝 Manifest now fully documents all social networking components
+
+**Earlier (January 14, 2026 - Evening):**
+- **SOCIAL PRIVACY CONTROLS ADDED:**
+  - ✅ Created SocialPrivacySettings.swift - Complete privacy model with presets
+  - ✅ Created SocialPrivacySettingsView.swift - Beautiful privacy UI with quick presets
+  - ✅ Added privacy controls to Settings → Social Privacy
+  - ✅ Added quick access in Friends tab (⋯ menu)
+  - ✅ Users can control: profile visibility, stats sharing, workout sharing, social interactions
+  - ✅ Three presets: Public, Friends Only, Private
+  - ✅ Real-time privacy summary showing what others can see
+- **SOCIAL FEATURES ROADMAP:**
+  - Created SOCIAL_IMPLEMENTATION_ROADMAP.md
+  - Documented complete plan for finishing social features
+  - Privacy foundation complete, integration next
+
+**Earlier Today (January 14, 2026):**
+- **SOCIAL FEATURES FIXED:**
+  - ✅ Created SocialModels.swift with proper data models
+  - ✅ Fixed profile persistence by linking to Apple ID (CloudKit userRecordID)
+  - ✅ Added local caching with UserDefaults (profiles persist offline)
+  - ✅ Added username uniqueness validation
+  - ✅ Profiles now properly tied to authenticated iCloud user
+  - ✅ fetchCurrentUserProfile() now queries by appleUserID instead of grabbing first record
+  - ✅ Added FollowRelationship model (simplified following, no bidirectional friends)
+  - ✅ Improved error handling with descriptive SocialError cases
+  - ✅ Added automatic cache management (load on init, save on create/update)
+  - ✅ Added simulator debug mode for UI testing
 - **AUTHENTICATION UX FIXES:**
   - Fixed "Guest User" incorrectly showing when signed in with Apple ID
   - Changed detection logic from `userEmail.isEmpty` to `userID.hasPrefix("guest-")`
@@ -1168,46 +1204,323 @@
 
 ---
 
-### SocialService.swift (357 lines) @Observable
-- **Purpose:** CloudKit-based social networking service
+### SocialModels.swift (233 lines)
+- **Purpose:** Data models for CloudKit social features
+- **Location:** /SocialModels.swift
+- **Models:**
+  
+  1. **UserProfile** (struct, Identifiable, Codable)
+     - **Purpose:** Public user profile stored in CloudKit
+     - **Properties:**
+       - `id: String` - UUID as string
+       - `appleUserID: String` - 🔑 CRITICAL - Links to iCloud user via CloudKit userRecordID
+       - `username: String` - Unique username for discovery
+       - `displayName: String` - Display name shown to friends
+       - `bio: String` - Optional bio text
+       - `avatarURL: String?` - Optional avatar image URL
+       - `createdDate: Date` - Profile creation timestamp
+       - `isPublic: Bool` - Public visibility flag
+       - `totalWorkouts: Int` - Workout count stat
+       - `totalVolume: Double` - All-time volume stat
+     - **Methods:**
+       - `init(appleUserID:username:displayName:bio:...)` - Creates new profile
+       - `init?(from: CKRecord)` - Parses from CloudKit record
+       - `toCKRecord() -> CKRecord` - Converts to CloudKit record
+     - **CloudKit Record Type:** `"UserProfile"`
+     - **Key Change (Jan 14):** Now requires `appleUserID` to link profile to authenticated iCloud user
+     - **Why it matters:** Ensures one profile per iCloud account, enables proper profile lookup
+  
+  2. **FollowRelationship** (struct, Identifiable) - 🆕 PRIMARY SOCIAL MODEL
+     - **Purpose:** Simplified one-way following (like Instagram/Twitter)
+     - **Properties:**
+       - `id: String` - UUID as string
+       - `followerID: String` - User who is following
+       - `followingID: String` - User being followed
+       - `followedAt: Date` - Timestamp of follow action
+     - **Methods:**
+       - `init(followerID:followingID:)` - Creates new follow relationship
+       - `init?(from: CKRecord)` - Parses from CloudKit record
+       - `toCKRecord() -> CKRecord` - Converts to CloudKit record
+     - **CloudKit Record Type:** `"FollowRelationship"`
+     - **Design Philosophy:**
+       - Instant following (no approval needed)
+       - One-way relationship (A can follow B without B following back)
+       - No status field (simpler than FriendRelationship)
+     - **Used by:** SocialService follow/unfollow methods
+  
+  3. **FriendRelationship** (struct, Identifiable) - 📦 LEGACY (Kept for Compatibility)
+     - **Purpose:** Original two-way friend system with approval
+     - **Properties:**
+       - `id: String` - UUID as string
+       - `followerID: String` - User who sent request
+       - `followingID: String` - User who received request
+       - `createdDate: Date` - Request creation timestamp
+       - `status: FriendStatus` - Request status (pending/accepted/blocked)
+     - **Enum: FriendStatus**
+       - `.pending` - Request sent, awaiting approval
+       - `.accepted` - Request approved, friends
+       - `.blocked` - User blocked
+     - **Methods:**
+       - `init(followerID:followingID:status:)` - Creates relationship
+       - `init?(from: CKRecord)` - Parses from CloudKit record
+       - `toCKRecord() -> CKRecord` - Converts to CloudKit record
+     - **CloudKit Record Type:** `"FriendRelationship"`
+     - **Status:** Legacy - Used by UI but mapped to FollowRelationship in service
+     - **Why kept:** Existing UI components reference this model
+  
+  4. **PublicWorkout** (struct, Identifiable, Codable)
+     - **Purpose:** Shared workout summaries for social feed
+     - **Properties:**
+       - `id: String` - UUID as string
+       - `userID: String` - User who created workout
+       - `workoutName: String` - Workout name
+       - `date: Date` - Workout date
+       - `totalVolume: Double` - Total volume (weight × reps)
+       - `exerciseCount: Int` - Number of exercises
+       - `isCompleted: Bool` - Completion status
+     - **Methods:**
+       - `init(userID:workoutName:date:totalVolume:exerciseCount:isCompleted:)`
+       - `init?(from: CKRecord)` - Parses from CloudKit record
+       - `toCKRecord() -> CKRecord` - Converts to CloudKit record
+     - **CloudKit Record Type:** `"PublicWorkout"`
+     - **Used by:** SocialService workout sharing and feed fetching
+  
+  5. **SocialError** (enum, LocalizedError)
+     - **Purpose:** Social feature error types with user-friendly messages
+     - **Cases:**
+       - `.notAuthenticated` - "You must be signed in to iCloud..."
+       - `.usernameTaken` / `.usernameAlreadyTaken` - "This username is already taken..."
+       - `.alreadyFollowing` - "You're already following this user."
+       - `.userNotFound` / `.profileNotFound` - "User not found."
+       - `.networkError` - "Network connection error..."
+       - `.serverError` - "CloudKit server is temporarily unavailable..."
+       - `.containerNotConfigured` - "iCloud container is not properly configured..."
+     - **Property:** `errorDescription: String?` - User-facing error messages
+     - **Used by:** SocialService throws these errors with descriptive messages
+
+---
+
+### SocialService.swift (570+ lines) @Observable
+- **Purpose:** CloudKit-based social networking service with Apple ID integration
+- **Location:** /SocialService.swift
 - **Container:** `iCloud.com.vinay.VinProWorkoutTracker`
 - **Database:** Public CloudKit database
 
 #### PROPERTIES:
-- `currentUserProfile: UserProfile?`
-- `friends: [UserProfile]`
-- `friendRequests: [FriendRelationship]`
-- `suggestedUsers: [UserProfile]`
-- `friendWorkouts: [PublicWorkout]`
-- `isLoading: Bool`, `errorMessage: String?`
+**Observable State:**
+- `currentUserProfile: UserProfile?` - Current user's profile
+- `friends: [UserProfile]` - Users you're following (reusing "friends" property name)
+- `friendRequests: [FriendRelationship]` - Legacy, always empty with instant follow
+- `suggestedUsers: [UserProfile]` - Recommended users to follow
+- `friendWorkouts: [PublicWorkout]` - Feed of workouts from followed users
+- `isLoading: Bool` - Loading state for UI
+- `errorMessage: String?` - Last error message
+- `privacySettings: SocialPrivacySettings` - User's privacy settings
 
-#### METHODS:
-1. **`checkAuthentication()`** (async) - Returns account status
-2. **`createUserProfile(username:displayName:bio:)`** (async)
-   - Creates CloudKit UserProfile record
-   - Saves to public database
-   - Comprehensive error handling with debug logging
-3. **`fetchCurrentUserProfile()`** (async) - Queries for user's profile
-4. **`updateUserProfile(displayName:bio:totalWorkouts:totalVolume:)`** (async)
-5. **`searchUsers(query:)`** (async) - Searches by username/displayName
-6. **`sendFriendRequest(to:)`** (async) - Creates FriendRelationship record
-7. **`acceptFriendRequest(relationshipID:)`** (async) - Updates status to "accepted"
-8. **`removeFriend(userID:)`** (async) - Deletes relationship records
-9. **`fetchFriends()`** (async)
-10. **`fetchFriendRequests()`** (async)
-11. **`fetchSuggestedUsers()`** (async)
-12. **`fetchFriendWorkouts()`** (async)
-13. **`shareWorkout(workout:)`** (async) - Shares workout to feed
+**Private State:**
+- `container: CKContainer` - CloudKit container reference
+- `publicDatabase: CKDatabase` - Public database reference
+- `cachedAppleUserID: String?` - 🔑 Cached iCloud user ID for performance
 
-#### ERROR HANDLING:
-- **`SocialError`:** `.notAuthenticated`, `.networkError`, `.serverError`, `.containerNotConfigured`, `.alreadyFollowing`
-- Detailed CloudKit error code mapping
-- Debug logging with emojis (🔍 ✅ ❌ ⚠️)
+**Constants:**
+- `profileCacheKey` - UserDefaults key for cached profile
+- `appleUserIDCacheKey` - UserDefaults key for cached Apple ID
 
-#### CLOUDKIT RECORDS:
-- **UserProfile** - username, displayName, bio, totalWorkouts, totalVolume
-- **FriendRelationship** - followerID, followingID, status (pending/accepted)
-- **PublicWorkout** - Shared workout data
+#### LOCAL CACHING SYSTEM (🆕 Performance Enhancement):
+**Methods:**
+- `loadCachedProfile()` - Loads UserProfile from UserDefaults on init
+  - Decodes JSON from UserDefaults
+  - Sets `currentUserProfile` if available
+  - Enables offline profile viewing
+- `cacheProfile(_: UserProfile)` - Saves profile to UserDefaults
+  - Encodes UserProfile to JSON
+  - Stores in UserDefaults for persistence
+  - Called after create/update operations
+- `clearCachedProfile()` - Removes cached data
+  - Clears both profile and Apple ID from UserDefaults
+  - Resets `cachedAppleUserID` to nil
+
+**Benefits:**
+- Profiles persist across app restarts
+- Works offline (shows last known profile)
+- Reduces CloudKit queries
+- Faster app startup
+
+#### APPLE ID INTEGRATION (🔑 Critical for Profile Persistence):
+**Method: `getAppleUserID() async throws -> String`**
+- **Purpose:** Gets unique CloudKit user record ID to link profile
+- **Algorithm:**
+  1. Returns cached ID if available (fast path)
+  2. In simulator: Generates fake but consistent ID for testing
+  3. On device: Fetches from `container.userRecordID()`
+  4. Caches result in both property and UserDefaults
+- **Return Value:** CloudKit record name (e.g., `_abc123def456`)
+- **Throws:** CloudKit errors if not authenticated
+- **Why it matters:** This is the **key fix** that ties profiles to iCloud accounts
+- **Before fix:** Profiles were orphaned, user could create multiple profiles
+- **After fix:** One profile per iCloud account, proper lookup by Apple ID
+
+#### AUTHENTICATION METHODS:
+1. **`checkAuthentication() async throws -> Bool`**
+   - Checks CloudKit account status
+   - Returns true if `CKAccountStatus == .available`
+   - Simulator bypass: Returns true with debug message
+   - Used before all CloudKit operations
+
+#### USER PROFILE MANAGEMENT:
+1. **`createUserProfile(username:displayName:bio:) async throws`**
+   - **Flow:**
+     1. Checks authentication via `checkAuthentication()`
+     2. Gets Apple User ID via `getAppleUserID()` 🔑
+     3. Checks username uniqueness with CloudKit query
+     4. Creates `UserProfile` with `appleUserID` link
+     5. Saves to CloudKit public database
+     6. Caches profile locally
+   - **Throws:**
+     - `SocialError.notAuthenticated` - Not signed in to iCloud
+     - `SocialError.usernameAlreadyTaken` - Username conflict
+     - `SocialError.networkError` - Network issues
+     - `SocialError.serverError` - CloudKit server issues
+     - `SocialError.containerNotConfigured` - Setup issues
+   - **Debug Logging:** Extensive emoji-based logging (🔍 ✅ ❌ ⚠️)
+
+2. **`fetchCurrentUserProfile() async throws`**
+   - **Flow:**
+     1. Returns cached profile if available (fast path) 🆕
+     2. Checks authentication
+     3. Gets Apple User ID
+     4. Queries CloudKit: `appleUserID == <user's ID>` 🔑 **KEY FIX**
+     5. Parses first matching record
+     6. Caches fetched profile
+   - **Before fix:** Queried with `TRUEPREDICATE` and grabbed first record (WRONG!)
+   - **After fix:** Queries by `appleUserID` to find user's specific profile
+   - **Throws:**
+     - `SocialError.notAuthenticated`
+     - `SocialError.profileNotFound` - No profile exists for this Apple ID
+
+3. **`updateUserProfile(displayName:bio:totalWorkouts:totalVolume:) async throws`**
+   - Updates profile properties (all parameters optional)
+   - Saves to CloudKit
+   - Caches updated profile locally 🆕
+   - Requires existing `currentUserProfile`
+
+#### FOLLOWING MANAGEMENT (Simplified, One-Way):
+**Design:** Instant follow (no approval needed), one-way relationships
+
+1. **`followUser(userID: String) async throws`**
+   - Checks if already following
+   - Creates `FollowRelationship` record
+   - Saves to CloudKit (`"FollowRelationship"` record type)
+   - Refreshes following list
+   - **Throws:** `SocialError.alreadyFollowing`
+
+2. **`unfollowUser(userID: String) async throws`**
+   - Queries for existing follow relationship
+   - Deletes CloudKit record
+   - Refreshes following list
+
+3. **`isFollowing(userID: String) -> Bool`**
+   - Checks if user in `friends` array
+   - Synchronous check against local state
+
+4. **`fetchFollowing() async`**
+   - Queries `FollowRelationship` where `followerID == currentUser.id`
+   - Collects all `followingID`s
+   - Fetches `UserProfile` for each following ID
+   - Updates `friends` array (reusing property name)
+   - Updates `isLoading` state
+
+#### LEGACY FRIEND REQUEST COMPATIBILITY:
+**Note:** These map to instant follow for backward compatibility with UI
+- `sendFriendRequest(to:)` → Calls `followUser()`
+- `acceptFriendRequest(relationshipID:)` → No-op (prints deprecation warning)
+- `removeFriend(userID:)` → Calls `unfollowUser()`
+- `fetchFriends()` → Calls `fetchFollowing()`
+- `fetchFriendRequests()` → Sets `friendRequests = []` (always empty)
+
+#### USER DISCOVERY:
+1. **`searchUsers(query: String) async throws -> [UserProfile]`**
+   - Searches by username OR displayName (case-insensitive)
+   - CloudKit predicate: `username CONTAINS[cd] %@ OR displayName CONTAINS[cd] %@`
+   - Excludes current user from results
+   - Limit: 20 results
+   - Simulator: Returns empty array with warning
+
+2. **`fetchSuggestedUsers() async`**
+   - Queries public profiles (`isPublic == 1`)
+   - Sorts by `totalWorkouts` (descending)
+   - Excludes current user
+   - Excludes already-following users
+   - Limit: 20 results
+   - Updates `suggestedUsers` array
+
+#### WORKOUT SHARING:
+1. **`shareWorkout(_ workout: Workout) async throws`**
+   - Creates `PublicWorkout` from Workout
+   - Includes: name, date, volume, exercise count, completion status
+   - Saves to CloudKit public database
+   - Updates user's `totalWorkouts` and `totalVolume` stats
+   - Simulator: Logs would-share message
+
+2. **`fetchFriendWorkouts() async`**
+   - Queries `PublicWorkout` where `userID IN <followingIDs>`
+   - Sorts by date (descending)
+   - Limit: 50 workouts
+   - Updates `friendWorkouts` array
+   - Returns empty if not following anyone
+
+#### DEBUG METHODS (DEBUG builds only):
+1. **`deleteCurrentUserProfile() async throws`** (#if DEBUG)
+   - Deletes current user's profile from CloudKit
+   - Clears local cache
+   - Used for testing/cleanup
+
+2. **`cleanupOrphanedProfiles() async throws`** (#if DEBUG)
+   - Finds profiles without `appleUserID` field
+   - Deletes orphaned profiles
+   - Returns count of deleted profiles
+   - Useful for cleaning up old test data
+
+#### ERROR HANDLING STRATEGY:
+- **CloudKit Error Mapping:**
+  - `.notAuthenticated` → `SocialError.notAuthenticated`
+  - `.networkUnavailable`, `.networkFailure` → `SocialError.networkError`
+  - `.serverResponseLost`, `.serviceUnavailable` → `SocialError.serverError`
+  - `.badContainer`, `.missingEntitlement`, `.unknownItem` → `SocialError.containerNotConfigured`
+- **Comprehensive Logging:**
+  - 🔍 Debug - Informational messages
+  - ✅ Success - Operations completed
+  - ❌ Error - Failures with details
+  - ⚠️ Warning - Non-critical issues
+- **Container Validation:**
+  - Logs container identifier on init
+  - Logs cached Apple User ID status
+  - Provides CloudKit Dashboard suggestions on errors
+
+#### SIMULATOR SUPPORT:
+- Generates fake Apple User ID for testing
+- Bypasses CloudKit queries (returns empty arrays)
+- Logs "would do X" messages for operations
+- Allows UI testing without CloudKit setup
+
+#### CLOUDKIT SCHEMA REQUIREMENTS:
+**Record Types Needed:**
+1. **UserProfile** - User profiles
+   - Fields: `appleUserID` (String), `username` (String), `displayName` (String), `bio` (String), `isPublic` (Int), `totalWorkouts` (Int), `totalVolume` (Double), `createdDate` (Date)
+   - Indexes: `appleUserID`, `username`
+
+2. **FollowRelationship** - Following relationships
+   - Fields: `followerID` (String), `followingID` (String), `followedAt` (Date)
+   - Indexes: `followerID`, `followingID`
+
+3. **PublicWorkout** - Shared workouts
+   - Fields: `userID` (String), `workoutName` (String), `date` (Date), `totalVolume` (Double), `exerciseCount` (Int), `isCompleted` (Int)
+   - Indexes: `userID`, `date`
+
+#### INTEGRATION POINTS:
+- **Used by:** FriendsView, ProfileView, UserProfileView
+- **Depends on:** SocialModels.swift, AuthenticationManager
+- **CloudKit Container:** Must match Xcode entitlements
 
 ---
 

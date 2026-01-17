@@ -21,6 +21,47 @@ struct FriendsView: View {
             .sheet(isPresented: $showingProfileSetup) {
                 ProfileSetupView(socialService: socialService)
             }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        NavigationLink {
+                            SocialPrivacySettingsView()
+                        } label: {
+                            Label("Privacy Settings", systemImage: "hand.raised")
+                        }
+                        
+                        #if DEBUG
+                        Divider()
+                        
+                        Button(role: .destructive) {
+                            Task {
+                                try? await socialService.deleteCurrentUserProfile()
+                            }
+                        } label: {
+                            Label("Delete My Profile", systemImage: "trash")
+                        }
+                        
+                        Button {
+                            Task {
+                                try? await socialService.cleanupOrphanedProfiles()
+                            }
+                        } label: {
+                            Label("Cleanup Old Profiles", systemImage: "trash.slash")
+                        }
+                        
+                        Button {
+                            socialService.currentUserProfile = nil
+                            UserDefaults.standard.removeObject(forKey: "cachedUserProfile")
+                            UserDefaults.standard.removeObject(forKey: "cachedAppleUserID")
+                        } label: {
+                            Label("Clear Local Cache", systemImage: "arrow.counterclockwise")
+                        }
+                        #endif
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                }
+            }
             .task {
                 await loadInitialData()
             }
@@ -91,23 +132,25 @@ struct FriendsView: View {
                 ProgressView()
             } else {
                 List {
-                    if !socialService.friendRequests.isEmpty {
-                        Section("Friend Requests") {
-                            ForEach(socialService.friendRequests) { request in
-                                FriendRequestRow(
-                                    request: request,
-                                    socialService: socialService
-                                )
-                            }
-                        }
-                    }
-                    
-                    Section("Your Friends") {
+                    Section("Following") {
                         if socialService.friends.isEmpty {
-                            Text("No friends yet")
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .listRowBackground(Color.clear)
+                            VStack(spacing: 12) {
+                                Image(systemName: "person.2")
+                                    .font(.system(size: 40))
+                                    .foregroundStyle(.secondary)
+                                
+                                Text("Not following anyone yet")
+                                    .font(.headline)
+                                    .foregroundStyle(.secondary)
+                                
+                                Text("Find people to follow in the Discover tab")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.center)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .listRowBackground(Color.clear)
                         } else {
                             ForEach(socialService.friends) { friend in
                                 NavigationLink {
@@ -125,8 +168,7 @@ struct FriendsView: View {
             }
         }
         .refreshable {
-            await socialService.fetchFriends()
-            await socialService.fetchFriendRequests()
+            await socialService.fetchFollowing()
         }
     }
     

@@ -2,6 +2,9 @@ import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
 import HealthKit
+import CloudKit
+
+
 
 struct ContentView: View {
     @Environment(\.modelContext) private var context
@@ -29,6 +32,9 @@ struct ContentView: View {
         }
     }
 
+    
+    @State private var socialService = SocialService()
+    
     // Bulk selection
     @State private var isSelecting = false
     @State private var selectedWorkouts: Set<Workout.ID> = []
@@ -588,21 +594,35 @@ struct ContentView: View {
         }
     }
 
-    private func toggleCompleted(_ workout: Workout) {
+    
+    func toggleCompleted(_ workout: Workout) {
+        workout.isCompleted.toggle()
+        
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
         
-        let wasCompleted = workout.isCompleted
-        workout.isCompleted.toggle()
-        try? context.save()
-        
-        // Save to HealthKit when marking as completed
-        if workout.isCompleted && !wasCompleted {
+        // Save to HealthKit if completed
+        if workout.isCompleted {
             Task {
                 await saveWorkoutToHealthKit(workout)
+                
+                // 🆕 AUTO-SHARE: Share to social feed if enabled
+                if let profile = socialService.currentUserProfile,
+                   profile.autoShareWorkouts {
+                    do {
+                        try await socialService.shareWorkout(workout, autoShared: true)
+                        print("✅ Auto-shared workout to feed")
+                    } catch {
+                        print("⚠️ Auto-share failed: \(error.localizedDescription)")
+                        // Fail silently - don't interrupt user flow
+                    }
+                }
             }
         }
     }
+    
+    
+    
     
     // MARK: - HealthKit Integration
     
