@@ -44,6 +44,10 @@ struct ContentView: View {
     @State private var isImporting = false
     @State private var importError: String?
     @State private var importSuccess: Int?
+    
+    // Import from JSON string (available on all devices for debugging)
+    @State private var showingJSONImport = false
+    @State private var jsonString = ""
 
     // Delete confirmation
     @State private var pendingDelete: Workout?
@@ -94,6 +98,12 @@ struct ContentView: View {
                                 isImporting = true
                             } label: {
                                 Label("Import Workouts", systemImage: "square.and.arrow.down")
+                            }
+                            
+                            Button {
+                                showingJSONImport = true
+                            } label: {
+                                Label("Import from JSON String", systemImage: "text.insert")
                             }
                             
                             Button {
@@ -152,6 +162,14 @@ struct ContentView: View {
             }
             .sheet(item: $shareItem) { item in
                 ActivityView(activityItems: [item.url])
+            }
+            .sheet(isPresented: $showingJSONImport) {
+                JSONImportSheet(
+                    jsonString: $jsonString,
+                    onImport: { jsonText in
+                        handleJSONStringImport(jsonText)
+                    }
+                )
             }
             .sheet(item: $activeSheet) { sheet in
                 switch sheet {
@@ -778,6 +796,142 @@ struct ContentView: View {
         }
     }
     
+    /// Import workouts directly from JSON string
+    private func handleJSONStringImport(_ jsonText: String) {
+        do {
+            // Validate input
+            let trimmedText = jsonText.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmedText.isEmpty else {
+                importError = "JSON text is empty"
+                return
+            }
+            
+            // Convert string to data
+            guard let data = trimmedText.data(using: .utf8) else {
+                importError = "Invalid JSON string encoding"
+                return
+            }
+            
+            // Decode JSON
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            
+            let exportFile: WorkoutExportFile
+            do {
+                exportFile = try decoder.decode(WorkoutExportFile.self, from: data)
+            } catch let decodingError as DecodingError {
+                // Provide helpful error messages
+                switch decodingError {
+                case .dataCorrupted(let context):
+                    importError = "JSON is corrupted: \(context.debugDescription)"
+                case .keyNotFound(let key, let context):
+                    importError = "Missing required field '\(key.stringValue)' at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+                case .typeMismatch(let type, let context):
+                    importError = "Wrong data type (expected \(type)) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+                case .valueNotFound(let type, let context):
+                    importError = "Missing value for \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))"
+                @unknown default:
+                    importError = "Failed to decode JSON: \(decodingError.localizedDescription)"
+                }
+                return
+            } catch {
+                importError = "Failed to parse JSON: \(error.localizedDescription)"
+                return
+            }
+            
+            // Validate workouts array
+            guard !exportFile.workouts.isEmpty else {
+                importError = "No workouts found in JSON file"
+                return
+            }
+            
+            // Validate each workout before importing
+            for (index, exportedWorkout) in exportFile.workouts.enumerated() {
+                // Validate workout name
+                guard !exportedWorkout.name.isEmpty else {
+                    importError = "Workout #\(index + 1) has empty name"
+                    return
+                }
+                
+                // Validate duration values are reasonable
+                guard exportedWorkout.warmupMinutes >= 0 && exportedWorkout.warmupMinutes <= 999 else {
+                    importError = "Workout '\(exportedWorkout.name)' has invalid warmup duration: \(exportedWorkout.warmupMinutes)"
+                    return
+                }
+                guard exportedWorkout.coreMinutes >= 0 && exportedWorkout.coreMinutes <= 999 else {
+                    importError = "Workout '\(exportedWorkout.name)' has invalid core duration: \(exportedWorkout.coreMinutes)"
+                    return
+                }
+                guard exportedWorkout.stretchMinutes >= 0 && exportedWorkout.stretchMinutes <= 999 else {
+                    importError = "Workout '\(exportedWorkout.name)' has invalid stretch duration: \(exportedWorkout.stretchMinutes)"
+                    return
+                }
+                
+                // Validate sets
+                for (setIndex, set) in exportedWorkout.sets.enumerated() {
+                    guard !set.exerciseName.isEmpty else {
+                        importError = "Workout '\(exportedWorkout.name)' has set #\(setIndex + 1) with empty exercise name"
+                        return
+                    }
+                    guard set.weight >= 0 && set.weight <= 9999 else {
+                        importError = "Workout '\(exportedWorkout.name)', set #\(setIndex + 1) has invalid weight: \(set.weight)"
+                        return
+                    }
+                    guard set.reps >= 0 && set.reps <= 9999 else {
+                        importError = "Workout '\(exportedWorkout.name)', set #\(setIndex + 1) has invalid reps: \(set.reps)"
+                        return
+                    }
+                }
+            }
+            
+            // Import workouts (validation passed)
+            var importedCount = 0
+            for exportedWorkout in exportFile.workouts {
+                let workout = Workout(
+                    date: exportedWorkout.date,
+                    name: exportedWorkout.name,
+                    warmupMinutes: exportedWorkout.warmupMinutes,
+                    coreMinutes: exportedWorkout.coreMinutes,
+                    stretchMinutes: exportedWorkout.stretchMinutes,
+                    mainExercises: exportedWorkout.mainExercises,
+                    coreExercises: exportedWorkout.coreExercises,
+                    stretches: exportedWorkout.stretches
+                )
+                
+                // Import sets
+                for exportedSet in exportedWorkout.sets {
+                    let setEntry = SetEntry(
+                        exerciseName: exportedSet.exerciseName,
+                        weight: exportedSet.weight,
+                        reps: exportedSet.reps,
+                        timestamp: exportedSet.timestamp
+                    )
+                    workout.sets.append(setEntry)
+                }
+                
+                context.insert(workout)
+                importedCount += 1
+            }
+            
+            try context.save()
+            
+            // Show success message
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.success)
+            
+            importSuccess = importedCount
+            showingJSONImport = false
+            jsonString = "" // Clear the text field
+            
+            print("✅ Successfully imported \(importedCount) workout(s)")
+            
+        } catch {
+            importError = "Failed to import: \(error.localizedDescription)"
+            showingJSONImport = false
+            print("❌ Import failed: \(error)")
+        }
+    }
+    
     // MARK: - Bulk Selection Actions
     
     private func toggleSelection(for workout: Workout) {
@@ -971,5 +1125,221 @@ private struct QuickRepeatSheet: View {
     }
 }
 
+// MARK: - JSON Import Sheet
 
+private struct JSONImportSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var jsonString: String
+    let onImport: (String) -> Void
+    @FocusState private var isTextEditorFocused: Bool
+    @State private var clipboardError: String?
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 16) {
+                // Paste button
+                Button {
+                    pasteFromClipboard()
+                } label: {
+                    HStack {
+                        Image(systemName: "doc.on.clipboard")
+                        Text("Paste from Clipboard")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+                }
+                .padding(.horizontal)
+                .padding(.top)
+                
+                // Sample JSON button for testing
+                Button {
+                    loadSampleJSON()
+                } label: {
+                    HStack {
+                        Image(systemName: "doc.text")
+                        Text("Load Sample JSON (for testing)")
+                    }
+                    .font(.caption)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(Color.green.opacity(0.2))
+                    .foregroundColor(.green)
+                    .cornerRadius(8)
+                }
+                .padding(.horizontal)
+                
+                Text("Import from JSON String")
+                    .font(.headline)
+                
+                Text("Tap 'Paste from Clipboard' above, OR type/paste directly into the box below")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+                
+                // Editable text editor for manual paste
+                TextEditor(text: $jsonString)
+                    .font(.system(.caption, design: .monospaced))
+                    .frame(minHeight: 300)
+                    .padding(8)
+                    .background(Color(.systemGray6))
+                    .cornerRadius(8)
+                    .overlay(
+                        Group {
+                            if jsonString.isEmpty {
+                                Text("Paste or type your JSON here...")
+                                    .font(.system(.caption, design: .monospaced))
+                                    .foregroundStyle(.secondary)
+                                    .padding(12)
+                                    .allowsHitTesting(false)
+                            }
+                        },
+                        alignment: .topLeading
+                    )
+                    .focused($isTextEditorFocused)
+                    .padding(.horizontal)
+                
+                HStack(spacing: 12) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                    .buttonStyle(.bordered)
+                    
+                    Button("Clear") {
+                        jsonString = ""
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(jsonString.isEmpty)
+                    
+                    Spacer()
+                    
+                    Button("Import") {
+                        onImport(jsonString)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(jsonString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+                .padding(.horizontal)
+                .padding(.bottom)
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .alert("Clipboard Error", isPresented: Binding(
+                get: { clipboardError != nil },
+                set: { if !$0 { clipboardError = nil } }
+            )) {
+                Button("OK") { clipboardError = nil }
+            } message: {
+                if let error = clipboardError {
+                    Text(error)
+                }
+            }
+        }
+    }
+    
+    private func pasteFromClipboard() {
+        print("🔍 Checking clipboard...")
+        
+        // Check if clipboard has any content
+        if UIPasteboard.general.hasStrings {
+            print("✅ Clipboard has strings")
+        } else {
+            print("⚠️ Clipboard has NO strings")
+        }
+        
+        // Check what types are available
+        let types = UIPasteboard.general.types
+        print("📋 Available types: \(types)")
+        
+        // Try to get the string
+        if let clipboardString = UIPasteboard.general.string {
+            jsonString = clipboardString
+            print("✅ Pasted \(clipboardString.count) characters from clipboard")
+            print("📝 First 100 chars: \(String(clipboardString.prefix(100)))")
+        } else {
+            let errorMsg = """
+            Clipboard appears empty or doesn't contain text.
+            
+            Available types: \(types.joined(separator: ", "))
+            Has strings: \(UIPasteboard.general.hasStrings)
+            
+            Try:
+            1. Copy text again
+            2. In Simulator: Edit → Automatically Sync Pasteboard
+            3. Or paste directly into the text box below
+            """
+            clipboardError = errorMsg
+            print("⚠️ \(errorMsg)")
+        }
+    }
+    
+    private func loadSampleJSON() {
+        // Load a valid sample JSON for testing
+        let sample = """
+        {
+          "exportedAt": "\(ISO8601DateFormatter().string(from: Date()))",
+          "workouts": [
+            {
+              "date": "\(ISO8601DateFormatter().string(from: Date().addingTimeInterval(-86400)))",
+              "name": "Sample Push Day",
+              "warmupMinutes": 10,
+              "coreMinutes": 45,
+              "stretchMinutes": 10,
+              "mainExercises": ["Bench Press", "Overhead Press"],
+              "coreExercises": ["Cable Flyes", "Lateral Raises"],
+              "stretches": ["Chest Stretch", "Shoulder Stretch"],
+              "sets": [
+                {
+                  "exerciseName": "Bench Press",
+                  "weight": 100.0,
+                  "reps": 5,
+                  "timestamp": "\(ISO8601DateFormatter().string(from: Date().addingTimeInterval(-86400 + 600)))"
+                },
+                {
+                  "exerciseName": "Bench Press",
+                  "weight": 100.0,
+                  "reps": 5,
+                  "timestamp": "\(ISO8601DateFormatter().string(from: Date().addingTimeInterval(-86400 + 720)))"
+                },
+                {
+                  "exerciseName": "Overhead Press",
+                  "weight": 60.0,
+                  "reps": 8,
+                  "timestamp": "\(ISO8601DateFormatter().string(from: Date().addingTimeInterval(-86400 + 1200)))"
+                }
+              ]
+            },
+            {
+              "date": "\(ISO8601DateFormatter().string(from: Date().addingTimeInterval(-172800)))",
+              "name": "Sample Pull Day",
+              "warmupMinutes": 10,
+              "coreMinutes": 50,
+              "stretchMinutes": 10,
+              "mainExercises": ["Deadlift", "Pull-ups"],
+              "coreExercises": ["Barbell Rows"],
+              "stretches": ["Back Stretch"],
+              "sets": [
+                {
+                  "exerciseName": "Deadlift",
+                  "weight": 150.0,
+                  "reps": 5,
+                  "timestamp": "\(ISO8601DateFormatter().string(from: Date().addingTimeInterval(-172800 + 600)))"
+                },
+                {
+                  "exerciseName": "Pull-ups",
+                  "weight": 0.0,
+                  "reps": 10,
+                  "timestamp": "\(ISO8601DateFormatter().string(from: Date().addingTimeInterval(-172800 + 1200)))"
+                }
+              ]
+            }
+          ]
+        }
+        """
+        jsonString = sample
+        print("✅ Loaded sample JSON with 2 workouts")
+    }
+}
 

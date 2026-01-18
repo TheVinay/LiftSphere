@@ -19,9 +19,8 @@ struct BrowseWorkoutsViewNew: View {
             broSplitProgram,
             strongLiftsProgram,
             madcowProgram,
-            fullBodyProgram,
-            calisthenicsProgram,
-            hotelWorkoutProgram
+            hotelWorkoutProgram,
+            tabataProgram
         ]
     }
     
@@ -378,44 +377,6 @@ struct BrowseWorkoutsViewNew: View {
         )
     }
     
-    private var fullBodyProgram: WorkoutProgram {
-        WorkoutProgram(
-            name: "Full Body",
-            icon: "figure.mixed.cardio",
-            days: [
-                ProgramDay(
-                    name: "Full Body Workout",
-                    description: "Complete full-body session",
-                    exercises: [], // Will be generated
-                    coreExercises: [],
-                    stretches: ExerciseLibrary.stretchSuggestionsBase,
-                    warmupMinutes: 5,
-                    coreMinutes: 5,
-                    stretchMinutes: 5
-                )
-            ]
-        )
-    }
-    
-    private var calisthenicsProgram: WorkoutProgram {
-        WorkoutProgram(
-            name: "Calisthenics",
-            icon: "figure.core.training",
-            days: [
-                ProgramDay(
-                    name: "Bodyweight Workout",
-                    description: "No equipment needed",
-                    exercises: [], // Will be generated
-                    coreExercises: [],
-                    stretches: ExerciseLibrary.stretchSuggestionsBase,
-                    warmupMinutes: 5,
-                    coreMinutes: 5,
-                    stretchMinutes: 5
-                )
-            ]
-        )
-    }
-    
     private var hotelWorkoutProgram: WorkoutProgram {
         WorkoutProgram(
             name: "Hotel Workouts",
@@ -447,9 +408,10 @@ struct BrowseWorkoutsViewNew: View {
                     name: "Day 2 - Upper Pull + Core",
                     description: "Back, posture, arms",
                     exercises: [
-                        "Inverted Row (waist height)",
-                        "Suspension Bicep Curl",
-                        "Incline Push-Up"
+                        "Superman",
+                        "Reverse Snow Angel",
+                        "Incline Push-Up",
+                        "Diamond Push-Up"
                     ],
                     coreExercises: [
                         "Side Plank",
@@ -486,6 +448,170 @@ struct BrowseWorkoutsViewNew: View {
                     warmupMinutes: 5,
                     coreMinutes: 5,
                     stretchMinutes: 5
+                )
+            ]
+        )
+    }
+    
+    private var tabataProgram: WorkoutProgram {
+        WorkoutProgram(
+            name: "Tabata HIIT",
+            icon: "timer",
+            days: [
+                ProgramDay(
+                    name: "Core Crusher",
+                    description: "4 min - 8 rounds × (20s work / 10s rest)",
+                    exercises: [
+                        "Mountain Climber",
+                        "Russian Twist",
+                        "Bicycle Crunch",
+                        "Plank Shoulder Tap"
+                    ],
+                    coreExercises: [],
+                    stretches: [
+                        "Child's pose",
+                        "Cat-cow stretch",
+                        "Supine twist"
+                    ],
+                    warmupMinutes: 3,
+                    coreMinutes: 4,
+                    stretchMinutes: 3
+                ),
+                ProgramDay(
+                    name: "Full Body Burn",
+                    description: "4 min - All-out intensity",
+                    exercises: [
+                        "Burpee",
+                        "Jump Squat",
+                        "Push-Up",
+                        "High Knee"
+                    ],
+                    coreExercises: [],
+                    stretches: [
+                        "Quad stretch",
+                        "Hip flexor stretch",
+                        "Shoulder stretch"
+                    ],
+                    warmupMinutes: 3,
+                    coreMinutes: 4,
+                    stretchMinutes: 3
+                ),
+                ProgramDay(
+                    name: "Leg Destroyer",
+                    description: "4 min - Lower body blast",
+                    exercises: [
+                        "Jump Squat",
+                        "Lunge Jump",
+                        "Bodyweight Squat",
+                        "Single Leg Glute Bridge"
+                    ],
+                    coreExercises: [],
+                    stretches: [
+                        "Quad stretch",
+                        "Hamstring stretch",
+                        "Calf stretch",
+                        "Figure-4 stretch"
+                    ],
+                    warmupMinutes: 3,
+                    coreMinutes: 4,
+                    stretchMinutes: 3
+                ),
+                ProgramDay(
+                    name: "Upper Body Blast",
+                    description: "4 min - Push power",
+                    exercises: [
+                        "Push-Up",
+                        "Pike Push-Up",
+                        "Plank to Push-Up",
+                        "Bench Dip (feet on floor)"
+                    ],
+                    coreExercises: [],
+                    stretches: [
+                        "Chest stretch",
+                        "Shoulder stretch",
+                        "Tricep stretch"
+                    ],
+                    warmupMinutes: 3,
+                    coreMinutes: 4,
+                    stretchMinutes: 3
+                ),
+                ProgramDay(
+                    name: "Cardio Crusher",
+                    description: "4 min - Maximum heart rate",
+                    exercises: [
+                        "High Knee",
+                        "Butt Kick",
+                        "Jumping Jack",
+                        "Mountain Climber"
+                    ],
+                    coreExercises: [],
+                    stretches: [
+                        "Quad stretch",
+                        "Hip flexor stretch",
+                        "Hamstring stretch"
+                    ],
+                    warmupMinutes: 3,
+                    coreMinutes: 4,
+                    stretchMinutes: 3
+                ),
+                ProgramDay(
+                    name: "Total Body Tabata",
+                    description: "4 min - Everything",
+                    exercises: [
+                        "Burpee",
+                        "Mountain Climber",
+                        "Jump Squat",
+                        "Push-Up"
+                    ],
+                    coreExercises: [],
+                    stretches: [
+                        "Child's pose",
+                        "Downward dog",
+                        "Hip flexor stretch",
+                        "Quad stretch"
+                    ],
+                    warmupMinutes: 3,
+                    coreMinutes: 4,
+                    stretchMinutes: 3
+                ),
+                ProgramDay(
+                    name: "Ab Ripper",
+                    description: "4 min - Core endurance",
+                    exercises: [
+                        "Bicycle Crunch",
+                        "Front Plank (hold)",
+                        "Russian Twist",
+                        "Dead Bug"
+                    ],
+                    coreExercises: [],
+                    stretches: [
+                        "Child's pose",
+                        "Cat-cow stretch",
+                        "Supine twist"
+                    ],
+                    warmupMinutes: 3,
+                    coreMinutes: 4,
+                    stretchMinutes: 3
+                ),
+                ProgramDay(
+                    name: "Power Builder",
+                    description: "4 min - Explosive strength",
+                    exercises: [
+                        "Jump Squat",
+                        "Burpee",
+                        "Lunge Jump",
+                        "Plank to Push-Up"
+                    ],
+                    coreExercises: [],
+                    stretches: [
+                        "Quad stretch",
+                        "Hip flexor stretch",
+                        "Chest stretch",
+                        "Shoulder stretch"
+                    ],
+                    warmupMinutes: 3,
+                    coreMinutes: 4,
+                    stretchMinutes: 3
                 )
             ]
         )
@@ -665,42 +791,9 @@ private struct ProgramDetailView: View {
     }
     
     private func createWorkout(for day: ProgramDay) {
-        // Handle generated programs (Full Body, Calisthenics)
-        let exercises: [String]
-        let coreExercises: [String]
-        
-        if program.name == "Full Body" {
-            let plan = WorkoutGenerator.generate(
-                mode: .full,
-                goal: .hypertrophy,
-                selectedMuscles: [],
-                calisthenicsOnly: false,
-                machinesOnly: false,
-                freeWeightsOnly: false,
-                warmupMinutes: 5,
-                coreMinutes: 5,
-                stretchMinutes: 5
-            )
-            exercises = plan.mainExercises.map { $0.name }
-            coreExercises = plan.coreExercises.map { $0.name }
-        } else if program.name == "Calisthenics" {
-            let plan = WorkoutGenerator.generate(
-                mode: .calisthenics,
-                goal: .hypertrophy,
-                selectedMuscles: [],
-                calisthenicsOnly: true,
-                machinesOnly: false,
-                freeWeightsOnly: false,
-                warmupMinutes: 5,
-                coreMinutes: 5,
-                stretchMinutes: 5
-            )
-            exercises = plan.mainExercises.map { $0.name }
-            coreExercises = plan.coreExercises.map { $0.name }
-        } else {
-            exercises = day.exercises
-            coreExercises = day.coreExercises
-        }
+        // All programs now have pre-defined exercises
+        let exercises = day.exercises
+        let coreExercises = day.coreExercises
         
         let finalName = workoutName.trimmingCharacters(in: .whitespacesAndNewlines)
         

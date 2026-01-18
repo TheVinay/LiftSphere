@@ -368,6 +368,8 @@ private struct EnhancedExerciseLogRow: View {
     let exerciseName: String
     let allSets: [SetEntry]
     let workoutSets: [SetEntry]
+    
+    @AppStorage("weightUnit") private var weightUnit: String = "lbs"
 
     // Most recent set across all workouts
     private var lastSet: SetEntry? {
@@ -484,7 +486,7 @@ private struct EnhancedExerciseLogRow: View {
 
     private func formatSet(_ set: SetEntry) -> String {
         let w = String(format: "%.1f", set.weight)
-        return "\(w)kg × \(set.reps)"
+        return "\(w) \(weightUnit) × \(set.reps)"
     }
 }
 

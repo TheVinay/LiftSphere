@@ -8,6 +8,12 @@ struct ExerciseHistoryView: View {
 
     @Bindable var workout: Workout
     let exerciseName: String
+    
+    // HealthKit manager for bodyweight pre-fill
+    @State private var healthKitManager = HealthKitManager()
+    
+    // Weight unit preference
+    @AppStorage("weightUnit") private var weightUnit: String = "lbs"
 
     // All sets across all workouts (for PR & global history)
     @Query(sort: \SetEntry.timestamp, order: .reverse)
@@ -146,7 +152,7 @@ struct ExerciseHistoryView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
 
-                TextField("Weight", text: $weightText)
+                TextField("Weight (\(weightUnit))", text: $weightText)
                     .keyboardType(.decimalPad)
 
                 TextField("Reps", text: $repsText)
@@ -419,6 +425,9 @@ struct ExerciseHistoryView: View {
                 }
             }
         }
+        .onAppear {
+            preFillBodyweightIfNeeded()
+        }
         .sheet(item: $editingSet) { set in
             NavigationStack {
                 Form {
@@ -649,7 +658,7 @@ struct ExerciseHistoryView: View {
     }
 
     private func formatWeight(_ w: Double) -> String {
-        String(format: "%.1f", w)
+        String(format: "%.1f \(weightUnit)", w)
     }
     
     // MARK: - Progressive Overload
@@ -717,6 +726,29 @@ struct ExerciseHistoryView: View {
     
     private var calendar: Calendar {
         Calendar.current
+    }
+    
+    // MARK: - Bodyweight Pre-Fill
+    
+    /// Pre-fills weight field with user's bodyweight from HealthKit if:
+    /// 1. Weight field is currently empty
+    /// 2. Exercise uses bodyweight (equipment == .bodyweight)
+    /// 3. User has weight data in HealthKit
+    private func preFillBodyweightIfNeeded() {
+        // Only pre-fill if weight field is empty
+        guard weightText.isEmpty else { return }
+        
+        // Check if this exercise uses bodyweight
+        guard let exercise = ExerciseLibrary.all.first(where: { $0.name == exerciseName }),
+              exercise.usesBodyweight else {
+            return
+        }
+        
+        // Pre-fill with user's weight from HealthKit
+        if let userWeight = healthKitManager.weight {
+            weightText = String(format: "%.1f", userWeight)
+            print("🏋️ Pre-filled bodyweight: \(userWeight) kg for \(exerciseName)")
+        }
     }
 }
 

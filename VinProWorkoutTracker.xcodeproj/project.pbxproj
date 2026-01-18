@@ -21,6 +21,10 @@
 		84B87A5F2F132D7200DE5E40 /* WorkoutCreationButtonRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B87A5E2F132D7200DE5E40 /* WorkoutCreationButtonRow.swift */; };
 		84B87A612F132EC600DE5E40 /* CreateWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B87A602F132EC600DE5E40 /* CreateWorkoutView.swift */; };
 		84B87A652F133C4000DE5E40 /* BrowseWorkoutsViewNew.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B87A642F133C4000DE5E40 /* BrowseWorkoutsViewNew.swift */; };
+		84CB88FC2F1C5DC8000C0BEF /* TABATA_WORKOUTS_ADDED.md in Resources */ = {isa = PBXBuildFile; fileRef = 84CB88FB2F1C5DC8000C0BEF /* TABATA_WORKOUTS_ADDED.md */; };
+		84CB88FE2F1C5EB2000C0BEF /* MANIFEST_UPDATE_SUMMARY.md in Resources */ = {isa = PBXBuildFile; fileRef = 84CB88FD2F1C5EB2000C0BEF /* MANIFEST_UPDATE_SUMMARY.md */; };
+		84CB89002F1CCECD000C0BEF /* TABATA_EXERCISES_COMPLETE.md in Resources */ = {isa = PBXBuildFile; fileRef = 84CB88FF2F1CCECD000C0BEF /* TABATA_EXERCISES_COMPLETE.md */; };
+		84CB89022F1CD31F000C0BEF /* BODYWEIGHT_AUTOFILL_FEATURE.md in Resources */ = {isa = PBXBuildFile; fileRef = 84CB89012F1CD31F000C0BEF /* BODYWEIGHT_AUTOFILL_FEATURE.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,6 +62,10 @@
 		84B87A5E2F132D7200DE5E40 /* WorkoutCreationButtonRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCreationButtonRow.swift; sourceTree = "<group>"; };
 		84B87A602F132EC600DE5E40 /* CreateWorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateWorkoutView.swift; sourceTree = "<group>"; };
 		84B87A642F133C4000DE5E40 /* BrowseWorkoutsViewNew.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowseWorkoutsViewNew.swift; sourceTree = "<group>"; };
+		84CB88FB2F1C5DC8000C0BEF /* TABATA_WORKOUTS_ADDED.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TABATA_WORKOUTS_ADDED.md; sourceTree = "<group>"; };
+		84CB88FD2F1C5EB2000C0BEF /* MANIFEST_UPDATE_SUMMARY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = MANIFEST_UPDATE_SUMMARY.md; sourceTree = "<group>"; };
+		84CB88FF2F1CCECD000C0BEF /* TABATA_EXERCISES_COMPLETE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TABATA_EXERCISES_COMPLETE.md; sourceTree = "<group>"; };
+		84CB89012F1CD31F000C0BEF /* BODYWEIGHT_AUTOFILL_FEATURE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = BODYWEIGHT_AUTOFILL_FEATURE.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -137,6 +145,10 @@
 				84A9652F2F18B37800AAC855 /* SOCIAL_STATUS_REPORT.md */,
 				84A965312F18B76200AAC855 /* END_OF_DAY_SUMMARY.md */,
 				84A965332F18B77E00AAC855 /* QUICK_START_NEXT_SESSION.md */,
+				84CB88FB2F1C5DC8000C0BEF /* TABATA_WORKOUTS_ADDED.md */,
+				84CB88FD2F1C5EB2000C0BEF /* MANIFEST_UPDATE_SUMMARY.md */,
+				84CB88FF2F1CCECD000C0BEF /* TABATA_EXERCISES_COMPLETE.md */,
+				84CB89012F1CD31F000C0BEF /* BODYWEIGHT_AUTOFILL_FEATURE.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -271,6 +283,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				843E15E12F131F70009B5523 /* PROJECT_MANIFEST.md in Resources */,
+				84CB89002F1CCECD000C0BEF /* TABATA_EXERCISES_COMPLETE.md in Resources */,
+				84CB89022F1CD31F000C0BEF /* BODYWEIGHT_AUTOFILL_FEATURE.md in Resources */,
+				84CB88FC2F1C5DC8000C0BEF /* TABATA_WORKOUTS_ADDED.md in Resources */,
+				84CB88FE2F1C5EB2000C0BEF /* MANIFEST_UPDATE_SUMMARY.md in Resources */,
 				84A965342F18B77E00AAC855 /* QUICK_START_NEXT_SESSION.md in Resources */,
 				84A965322F18B76200AAC855 /* END_OF_DAY_SUMMARY.md in Resources */,
 				84A9652E2F18333900AAC855 /* SOCIAL_IMPLEMENTATION_ROADMAP.md in Resources */,
@@ -472,7 +488,7 @@
 				CODE_SIGN_ENTITLEMENTS = VinProWorkoutTracker/VinProWorkoutTracker.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_ASSET_PATHS = "\"VinProWorkoutTracker/Preview Content\"";
 				DEVELOPMENT_TEAM = 3DR939YJ4V;
 				ENABLE_PREVIEWS = YES;
@@ -493,7 +509,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 4.1;
+				MARKETING_VERSION = 4.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.vinay.vinproworkouttracker;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -515,7 +531,7 @@
 				CODE_SIGN_ENTITLEMENTS = VinProWorkoutTracker/VinProWorkoutTracker.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_ASSET_PATHS = "\"VinProWorkoutTracker/Preview Content\"";
 				DEVELOPMENT_TEAM = 3DR939YJ4V;
 				ENABLE_PREVIEWS = YES;
@@ -536,7 +552,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 4.1;
+				MARKETING_VERSION = 4.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.vinay.vinproworkouttracker;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

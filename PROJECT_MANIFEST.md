@@ -1,10 +1,47 @@
 # VinPro / LiftSphere - Complete Project Manifest
 
-**Last Updated:** January 14, 2026 (Late Evening)  
-**Manifest Version:** 2.5  
+**Last Updated:** January 17, 2026 (Saturday Evening)  
+**Manifest Version:** 2.6  
 **Purpose:** Comprehensive documentation of all files, features, models, and cross-references
 
-**🆕 LATEST UPDATES (January 14, 2026 - Late Evening):**
+**🆕 LATEST UPDATES (January 18, 2026 - Sunday Evening):**
+- **WEIGHT UNIT PREFERENCE:**
+  - ✅ Added weight unit toggle in Settings → Workouts (lbs ↔ kg)
+  - ✅ Updates display throughout app: ExerciseHistoryView, WorkoutDetailView
+  - ✅ Shows "Weight (lbs)" or "Weight (kg)" in TextField placeholders
+  - ✅ Shows "80.0 lbs × 10" or "80.0 kg × 10" in set history
+  - ✅ Shows "Last: 80.0 lbs × 10" and "PR: 90 lbs × 2" in workout rows
+  - ✅ Data stored as numbers (no conversion), just display preference
+  - ✅ Persisted in AppStorage("weightUnit"), defaults to "lbs"
+  - ✅ Zero breaking changes - UI-only update
+- **BODYWEIGHT EXERCISE AUTO-FILL:**
+  - ✅ Weight field now auto-fills with user's bodyweight from HealthKit
+  - ✅ Works for ALL bodyweight exercises (equipment == .bodyweight)
+  - ✅ Includes: Push-Ups, Squats, Burpees, Planks, Dead Bug, Bird Dog, etc.
+  - ✅ Smart detection via ExerciseTemplate.usesBodyweight property
+  - ✅ Only pre-fills when weight field is empty (user can still override)
+  - ✅ Zero breaking changes - no data model modifications
+  - ✅ Uses existing HealthKitManager integration
+
+**Earlier (January 17, 2026):**
+- **TABATA HIIT WORKOUTS ADDED:**
+  - ✅ Added comprehensive Tabata HIIT program to Browse Workouts
+  - ✅ 8 different Tabata workouts: Core Crusher, Full Body Burn, Leg Destroyer, Upper Body Blast, Cardio Crusher, Total Body Tabata, Ab Ripper, Power Builder
+  - ✅ Each workout follows classic Tabata protocol: 8 rounds × (20s work / 10s rest) = 4 minutes
+  - ✅ All bodyweight exercises, no equipment needed
+  - ✅ Includes proper warmup (3 min) and stretching (3 min)
+  - ✅ Located in BrowseWorkoutsViewNew with timer icon
+- **JSON IMPORT ENHANCEMENTS:**
+  - ✅ Made JSON import available on real devices (removed simulator-only restriction)
+  - ✅ Replaced read-only Text with editable TextEditor for manual paste
+  - ✅ Added comprehensive validation to prevent crashes on malformed JSON
+  - ✅ Added detailed error messages for JSON parsing failures
+  - ✅ Added "Load Sample JSON" button for easy testing
+  - ✅ Enhanced clipboard debugging with detailed logging
+  - ✅ Validates workout structure, exercise names, weight/rep ranges, duration values
+  - ✅ Shows helpful error messages instead of crashing
+
+**Earlier (January 14, 2026 - Late Evening):**
 - **SOCIAL MODELS COMPLETION:**
   - ✅ Added FollowRelationship model to SocialModels.swift (was missing!)
   - ✅ Documented complete social data model architecture
@@ -528,6 +565,14 @@
 4. **Import/Export:**
    - Export all workouts to JSON
    - Import JSON file with file picker
+   - **🆕 Import from JSON String** (Added January 17, 2026):
+     - Available on both simulator AND real devices (no longer simulator-only)
+     - Editable TextEditor for direct paste (was read-only Text)
+     - Native iOS paste support (long-press → Paste)
+     - "Load Sample JSON" button for testing
+     - Comprehensive validation prevents crashes
+     - Detailed error messages for malformed JSON
+     - Validates: structure, exercise names, weight/rep ranges, duration values
    - Bulk export selected workouts
    - Error/success alerts
    - Uses `ExportManager` and `WorkoutExportFile`
@@ -567,10 +612,23 @@
    - `saveWorkoutToHealthKit()` - async HealthKit save
    - `handleDelete()` - Respects confirmation preference
    - `handleImport()` - Decodes WorkoutExportFile
+   - **🆕 `handleJSONStringImport()`** - Validates and imports JSON with comprehensive error handling:
+     - Validates JSON structure and data types
+     - Checks workout names not empty
+     - Validates duration ranges (0-999 minutes)
+     - Validates weight (0-9999 kg) and reps (0-9999)
+     - Provides detailed error messages on failure
+     - Prevents crashes from malformed data
    - Bulk actions: archive, unarchive, delete, export
 
 10. **Components:**
     - `QuickRepeatSheet` - Recent workouts selection
+    - **🆕 `JSONImportSheet`** - JSON string import interface:
+      - Editable TextEditor (not read-only)
+      - "Paste from Clipboard" button with enhanced debugging
+      - "Load Sample JSON" button for testing
+      - Shows clipboard diagnostics on paste failure
+      - Clear button to reset text
     - `View.if()` extension - Conditional modifiers
 
 ---
@@ -627,7 +685,8 @@
   - Madcow 5×5 (3 days)
   - Full Body (1 workout)
   - Calisthenics (1 workout)
-  - My Templates (custom)
+  - Hotel Workouts (3 days)
+  - **🆕 Tabata HIIT (8 workouts)** - Added January 17, 2026
 - **Screen 2:** Program Detail (ProgramDetailView)
   - **Editable workout name field** - Auto-updates when day selected
   - **Collapsible days** using DisclosureGroup
@@ -787,6 +846,9 @@
      - `equipment: Equipment`
      - `isCalisthenic: Bool`
      - `lowBackSafe: Bool`
+   - **🆕 Computed Properties:**
+     - `usesBodyweight: Bool` - Returns `true` if `equipment == .bodyweight`
+     - Used for auto-filling weight from HealthKit in ExerciseHistoryView
 
 2. **`ExerciseDetail`** (struct) - For future use
    - `name: String`
@@ -868,8 +930,20 @@
    - Day 2: Upper Pull + Core (inverted rows, bicep work)
    - Day 3: Lower Body + Conditioning (squats, lunges, glute bridges)
    - Equipment: Floor, bed/chair only
-10. **Custom Templates** - User-saved templates from workouts
-11. **Custom** - Muscle group selector + generator
+10. **Tabata HIIT** - 8 workouts (🆕 Added January 17, 2026)
+   - **Core Crusher** - 4 min abs (Mountain Climbers, Russian Twists, Bicycle Crunches, Plank Shoulder Taps)
+   - **Full Body Burn** - 4 min total body (Burpees, Jump Squats, Push-Ups, High Knees)
+   - **Leg Destroyer** - 4 min lower body (Jump Squats, Lunge Jumps, Bodyweight Squats, Glute Bridges)
+   - **Upper Body Blast** - 4 min push (Push-Ups, Pike Push-Ups, Plank to Push-Up, Bench Dips)
+   - **Cardio Crusher** - 4 min cardio (High Knees, Butt Kicks, Jumping Jacks, Mountain Climbers)
+   - **Total Body Tabata** - 4 min everything (Burpees, Mountain Climbers, Jump Squats, Push-Ups)
+   - **Ab Ripper** - 4 min core (Bicycle Crunches, Front Plank, Russian Twists, Dead Bug)
+   - **Power Builder** - 4 min explosive (Jump Squats, Burpees, Lunge Jumps, Plank to Push-Up)
+   - Protocol: 8 rounds of 20 seconds work / 10 seconds rest
+   - Total session: ~10 minutes (3 min warmup + 4 min tabata + 3 min stretch)
+   - Icon: Timer (⏱️)
+11. **Custom Templates** - User-saved templates from workouts
+12. **Custom** - Muscle group selector + generator
 
 #### FEATURES:
 - **Recent Workouts:** Repeat last Push/Pull workout
@@ -1587,11 +1661,13 @@
 - **Purpose:** Set logging and exercise history with PR detection
 - **Props:** `@Bindable var workout: Workout`, `exerciseName: String`
 - **Data:** `@Query` for all sets across all workouts
+- **🆕 HealthKit Integration:** `@State healthKitManager: HealthKitManager` for bodyweight pre-fill
 
 #### STATE:
 - `weightText`, `repsText` - Input fields
 - `prMessage: String?` - PR banner message
 - `isExerciseInfoExpanded: Bool` - Exercise details section
+- `healthKitManager` - 🆕 For fetching user's bodyweight
 
 #### SECTIONS:
 1. **Progressive Overload Indicator:**
@@ -1608,7 +1684,7 @@
 
 3. **Add Set Section:**
    - Exercise name (secondary text)
-   - Weight input (decimal keyboard)
+   - Weight input (decimal keyboard) - 🆕 **Auto-fills with bodyweight for bodyweight exercises**
    - Reps input (number keyboard)
    - "Add set" button (disabled if empty)
 
@@ -1627,6 +1703,19 @@
    - Form tips
    - Uses `ExerciseDatabase` (external service)
 
+#### 🆕 BODYWEIGHT AUTO-FILL FEATURE:
+- **Trigger:** `.onAppear` calls `preFillBodyweightIfNeeded()`
+- **Logic:**
+  1. Checks if weight field is empty
+  2. Looks up exercise in `ExerciseLibrary.all`
+  3. Checks if `exercise.usesBodyweight == true`
+  4. Pre-fills weight from `healthKitManager.weight`
+- **User Experience:**
+  - Saves time for bodyweight exercises
+  - User can still edit/override the value
+  - Works for ALL exercises with `equipment == .bodyweight`
+- **Examples:** Push-Ups, Squats, Burpees, Planks, Dead Bug, Bird Dog, etc.
+
 #### PR DETECTION:
 - Tracks `bestWeightSoFar` - Max weight ever
 - Tracks `best1RMSoFar` - Max estimated 1RM
@@ -1638,6 +1727,7 @@
 - `getLastWorkoutComparison()` - Compares to previous workout
 - `estimated1RM(weight:reps:)` - Calculates 1RM estimate
 - `formatWeight(_:)` - Formats weight display
+- **🆕 `preFillBodyweightIfNeeded()`** - Smart bodyweight pre-fill from HealthKit
 - Exercise info cards with gradient icons
 
 ---
@@ -1683,12 +1773,14 @@
 ### ✅ KEY FEATURES
 - **Workout Management:** Create, edit, archive, bulk operations, quick repeat
 - **Exercise Logging:** Set tracking, PR detection, progressive overload indicators
-- **Templates:** 10 built-in + custom user templates
+- **Templates:** 11 built-in programs (including Tabata HIIT) + custom user templates
 - **Analytics:** Muscle balance radar, undertrained detection, streaks, trends
 - **Social:** Friends, feed, discovery, workout sharing
 - **Health Integration:** Read 20+ metrics, write workouts
 - **Export:** JSON, CSV (detailed/summary), PDF
+- **Import:** File picker, JSON string paste (with validation)
 - **Search:** Settings search, exercise search, user search
+- **HIIT Training:** 8 Tabata workouts with classic 20s/10s protocol
 
 ### ✅ CLOUDKIT INTEGRATION
 - Container: `iCloud.com.vinay.VinProWorkoutTracker`
@@ -1741,6 +1833,9 @@
 
 **Supporting Files:**
 - README.md, LAUNCH_CHECKLIST.md, SOCIAL_INTEGRATION.md
+- RELEASE_TONIGHT_CHECKLIST.md - Social features release guide
+- TABATA_WORKOUTS_ADDED.md - Tabata HIIT documentation
+- JSON_IMPORT_FIXES.md, JSON_IMPORT_FINAL_FIX.md - Import enhancements
 - Various markdown documentation files
 
 ---

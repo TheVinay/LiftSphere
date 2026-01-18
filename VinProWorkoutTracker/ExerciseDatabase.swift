@@ -18,6 +18,7 @@ struct ExerciseDatabase {
         "Bench Press": "Chest, Front Shoulders, Triceps",
         "Push-Up": "Chest, Front Shoulders, Triceps, Core",
         "Incline Push-Up": "Upper Chest, Front Shoulders, Triceps",
+        "Diamond Push-Up": "Triceps, Chest, Front Shoulders",
         
         // SHOULDERS
         "Seated Dumbbell Shoulder Press": "Shoulders, Triceps",
@@ -70,6 +71,7 @@ struct ExerciseDatabase {
         
         // CORE
         "Front Plank": "Core, Shoulders",
+        "Front Plank (hold)": "Core, Shoulders",
         "Side Plank": "Obliques, Core",
         "Dead Bug": "Core, Hip Flexors",
         "Bird Dog": "Core, Lower Back, Balance",
@@ -80,8 +82,19 @@ struct ExerciseDatabase {
         "Toe Touch Crunch": "Upper Abs",
         "Plank to Push-Up": "Core, Chest, Shoulders, Triceps",
         "Superman": "Lower Back, Glutes, Upper Back",
+        "Reverse Snow Angel": "Upper Back, Rear Shoulders, Traps",
         "Mountain Climber": "Core, Hip Flexors, Cardio",
         "Burpee": "Full Body, Cardio",
+        "Russian Twist": "Obliques, Core, Hip Flexors",
+        "Bicycle Crunch": "Core, Obliques, Hip Flexors",
+        "Plank Shoulder Tap": "Core, Shoulders, Stability",
+        
+        // CARDIO / PLYOMETRIC
+        "Jump Squat": "Quads, Glutes, Power, Cardio",
+        "High Knee": "Hip Flexors, Core, Cardio",
+        "Lunge Jump": "Quads, Glutes, Power, Balance",
+        "Butt Kick": "Hamstrings, Cardio",
+        "Jumping Jack": "Full Body, Cardio",
         
         // ADDITIONAL
         "Incline Dumbbell Press (Neutral)": "Upper Chest, Front Shoulders, Triceps",
@@ -137,6 +150,12 @@ struct ExerciseDatabase {
             "Position body in a straight line with feet on the ground.",
             "Lower chest toward the elevated surface.",
             "Push back up to starting position, maintaining a tight core."
+        ],
+        "Diamond Push-Up": [
+            "Start in plank position with hands together forming a diamond shape with thumbs and index fingers.",
+            "Keep elbows close to your sides as you lower down.",
+            "Lower your body until chest nearly touches your hands.",
+            "Push back up to starting position, focusing on triceps."
         ],
         
         // SHOULDER EXERCISES
@@ -450,6 +469,12 @@ struct ExerciseDatabase {
             "Squeeze glutes and lower back.",
             "Lower back down with control."
         ],
+        "Reverse Snow Angel": [
+            "Lie face down with arms at your sides, palms facing down.",
+            "Lift chest and arms slightly off the ground.",
+            "Sweep arms overhead in an arc (like making a snow angel).",
+            "Sweep arms back to starting position, keeping chest lifted throughout."
+        ],
         "Mountain Climber": [
             "Start in push-up position with arms straight.",
             "Drive one knee toward chest, then quickly switch legs.",
@@ -461,6 +486,60 @@ struct ExerciseDatabase {
             "Jump feet back into push-up position.",
             "Perform a push-up (optional), then jump feet back to squat.",
             "Jump up explosively with arms overhead."
+        ],
+        "Russian Twist": [
+            "Sit on floor with knees bent, feet lifted off ground.",
+            "Lean back slightly to engage core.",
+            "Rotate torso side to side, touching floor beside hips.",
+            "Keep core tight throughout movement."
+        ],
+        "Bicycle Crunch": [
+            "Lie on back with hands behind head, legs lifted.",
+            "Bring right elbow toward left knee while extending right leg.",
+            "Switch sides in a pedaling motion.",
+            "Keep lower back pressed to floor."
+        ],
+        "Plank Shoulder Tap": [
+            "Start in high plank position (push-up position).",
+            "Keeping hips stable, tap left shoulder with right hand.",
+            "Return hand to floor, then tap right shoulder with left hand.",
+            "Alternate sides while minimizing hip rotation."
+        ],
+        "Jump Squat": [
+            "Start in standing position, feet shoulder-width apart.",
+            "Lower into full squat position.",
+            "Explosively jump straight up.",
+            "Land softly and immediately descend into next rep."
+        ],
+        "High Knee": [
+            "Stand tall with feet hip-width apart.",
+            "Drive one knee up to hip height while opposite arm pumps forward.",
+            "Quickly alternate legs in a running motion.",
+            "Stay on balls of feet for maximum speed."
+        ],
+        "Lunge Jump": [
+            "Start in lunge position with one foot forward.",
+            "Jump explosively, switching legs mid-air.",
+            "Land in lunge position with opposite leg forward.",
+            "Immediately descend and repeat."
+        ],
+        "Butt Kick": [
+            "Stand tall, then run in place.",
+            "Kick heels up toward glutes with each step.",
+            "Pump arms as if running.",
+            "Move at a quick pace."
+        ],
+        "Jumping Jack": [
+            "Start standing with feet together, arms at sides.",
+            "Jump while spreading legs and raising arms overhead.",
+            "Jump again to return to starting position.",
+            "Repeat in a rhythmic motion."
+        ],
+        "Front Plank (hold)": [
+            "Get into forearm plank position.",
+            "Hold body in straight line from head to heels.",
+            "Engage core and glutes throughout.",
+            "Hold for prescribed time while breathing normally."
         ],
         
         // ADDITIONAL
@@ -527,6 +606,12 @@ struct ExerciseDatabase {
             "Keep core tight to avoid sagging",
             "Lower yourself slowly and with control",
             "Great low-back friendly option for beginners"
+        ],
+        "Diamond Push-Up": [
+            "This is harder than regular push-ups",
+            "Keep elbows tucked in close to your sides",
+            "Focus on triceps engagement",
+            "If too difficult, do them on knees or use an elevated surface"
         ],
         
         // SHOULDER EXERCISES
@@ -840,6 +925,12 @@ struct ExerciseDatabase {
             "Hold briefly at top",
             "Good for posterior chain"
         ],
+        "Reverse Snow Angel": [
+            "Excellent for upper back and rear shoulders",
+            "Keep chest lifted throughout the entire movement",
+            "Move arms slowly and with control",
+            "Great for improving posture and shoulder health"
+        ],
         "Mountain Climber": [
             "Great cardio and core combination",
             "Keep hips level - don't let them bounce",
@@ -851,6 +942,60 @@ struct ExerciseDatabase {
             "Can modify by stepping back instead of jumping",
             "Keep core engaged throughout",
             "Great for conditioning"
+        ],
+        "Russian Twist": [
+            "Sit with knees bent, feet off floor for harder variation",
+            "Rotate torso, not just arms",
+            "Keep core engaged throughout",
+            "Can hold weight for added difficulty"
+        ],
+        "Bicycle Crunch": [
+            "Focus on quality over speed",
+            "Bring opposite elbow to knee",
+            "Keep lower back pressed to floor",
+            "Excellent for obliques and core"
+        ],
+        "Plank Shoulder Tap": [
+            "Keep hips stable - minimize rotation",
+            "Tap opposite shoulder alternating sides",
+            "Widen stance for easier balance",
+            "Great for core stability and anti-rotation"
+        ],
+        "Jump Squat": [
+            "Land softly with knees slightly bent",
+            "Full squat depth before jumping",
+            "High intensity - use for power and cardio",
+            "Rest if form breaks down"
+        ],
+        "High Knee": [
+            "Drive knees up to hip height",
+            "Pump arms for momentum",
+            "Excellent cardio and hip flexor work",
+            "Keep core tight and chest up"
+        ],
+        "Lunge Jump": [
+            "Land softly in lunge position",
+            "Switch legs mid-air",
+            "High impact - ensure proper warmup",
+            "Great for power and single-leg strength"
+        ],
+        "Butt Kick": [
+            "Kick heels to glutes",
+            "Stay on balls of feet",
+            "Excellent cardio and hamstring activation",
+            "Move at your own pace"
+        ],
+        "Jumping Jack": [
+            "Classic cardio movement",
+            "Land softly on each rep",
+            "Low impact modification: step side-to-side",
+            "Great for warmup or conditioning"
+        ],
+        "Front Plank (hold)": [
+            "Hold static position for time",
+            "Keep body in straight line",
+            "Don't let hips sag or pike up",
+            "Focus on breathing throughout hold"
         ],
         
         // ADDITIONAL

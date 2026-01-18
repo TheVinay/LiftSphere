@@ -836,6 +836,7 @@ struct SyncSettingsView: View {
 struct WorkoutSettingsView: View {
     @AppStorage("showArchivedWorkouts") private var showArchivedWorkouts: Bool = false
     @AppStorage("confirmBeforeDelete") private var confirmBeforeDelete: Bool = true
+    @AppStorage("weightUnit") private var weightUnit: String = "lbs"
     
     var body: some View {
         Form {
@@ -846,6 +847,18 @@ struct WorkoutSettingsView: View {
                 Text("Display Options")
             } footer: {
                 Text("Choose how workouts are displayed and deleted in the app.")
+            }
+            
+            Section {
+                Picker("Weight Unit", selection: $weightUnit) {
+                    Text("lbs").tag("lbs")
+                    Text("kg").tag("kg")
+                }
+                .pickerStyle(.segmented)
+            } header: {
+                Text("Weight Display")
+            } footer: {
+                Text("Choose the unit to display weight values throughout the app.")
             }
             
             Section {

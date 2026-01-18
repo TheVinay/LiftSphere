@@ -67,6 +67,11 @@ struct ExerciseTemplate {
     let equipment: Equipment
     let isCalisthenic: Bool
     let lowBackSafe: Bool
+    
+    /// Returns true if this exercise typically uses bodyweight as resistance
+    var usesBodyweight: Bool {
+        return equipment == .bodyweight
+    }
 }
 
 struct ExerciseDetail {
@@ -166,6 +171,16 @@ struct ExerciseLibrary {
         .init(name: "Superman", muscleGroup: .core, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
         .init(name: "Mountain Climber", muscleGroup: .core, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
         .init(name: "Burpee", muscleGroup: .core, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
+        .init(name: "Russian Twist", muscleGroup: .core, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
+        .init(name: "Bicycle Crunch", muscleGroup: .core, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
+        .init(name: "Plank Shoulder Tap", muscleGroup: .core, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
+        
+        // ADDITIONAL EXERCISES - Cardio/Plyometric
+        .init(name: "Jump Squat", muscleGroup: .legs, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
+        .init(name: "High Knee", muscleGroup: .core, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
+        .init(name: "Lunge Jump", muscleGroup: .legs, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
+        .init(name: "Butt Kick", muscleGroup: .legs, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
+        .init(name: "Jumping Jack", muscleGroup: .core, equipment: .bodyweight, isCalisthenic: true, lowBackSafe: true),
     ]
 
     static func forMode(_ mode: WorkoutMode,
