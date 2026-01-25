@@ -8,6 +8,10 @@ struct AnalyticsView: View {
     @Query(sort: \Workout.date, order: .forward) private var workouts: [Workout]
     @Query(sort: \SetEntry.timestamp, order: .forward) private var sets: [SetEntry]
 
+    
+    // Secondary muscle weighting factor (used only if present)
+    private let secondaryWeight: Double = 0.35
+
     private let calendar = Calendar.current
 
     // MARK: - Controls
@@ -28,6 +32,8 @@ struct AnalyticsView: View {
             }
             .navigationTitle("Analytics")
             .navigationBarTitleDisplayMode(.inline)
+            // 🔍 UNCOMMENT THIS LINE TO SEE EXERCISE MAPPING DEBUG INFO
+            // .onAppear { debugUnmappedExercises() }
         }
     }
     
@@ -110,16 +116,21 @@ struct AnalyticsView: View {
                         }
 
                         // Radar chart
+                        let currentValues = distributionValues()
+                        let prevValues = previousDistributionValues()
+                        let maxVal = max(
+                            currentValues.values.max() ?? 1,
+                            prevValues.values.max() ?? 1
+                        )
+                        
                         RadarChartView(
-                            values: distributionValues(),
-                            previousValues: previousDistributionValues(),
-                            maxValue: max(
-                                distributionValues().values.max() ?? 1,
-                                previousDistributionValues().values.max() ?? 1
-                            ),
+                            values: currentValues,
+                            previousValues: prevValues,
+                            maxValue: maxVal,
                             selectedMuscle: $selectedMuscle
                         )
                         .frame(height: 260)
+                        .id("\(selectedRange.rawValue)-\(selectedMetric.rawValue)-\(sets.count)")
                         
                         Divider()
                         
@@ -160,10 +171,9 @@ struct AnalyticsView: View {
                                     .foregroundStyle(.secondary)
                                 
                                 VStack(alignment: .leading, spacing: 8) {
-                                    let values = distributionValues()
-
+                                    // Use the already calculated values from above
                                     ForEach(undertrained) { muscle in
-                                        let severity = severity(for: muscle, values: values)
+                                        let severity = severity(for: muscle, values: currentValues)
 
                                         HStack {
                                             Image(systemName: "circle.fill")
@@ -188,6 +198,9 @@ struct AnalyticsView: View {
                             }
                         }
                     }
+                    .animation(.easeInOut(duration: 0.2), value: selectedRange)
+                    .animation(.easeInOut(duration: 0.2), value: selectedMetric)
+                    .animation(.easeInOut(duration: 0.2), value: selectedMuscle)
                 }
 
                 
@@ -282,6 +295,235 @@ struct AnalyticsView: View {
             content: content
         )
     }
+    
+    private func applyExerciseContribution(
+        _ exercise: ExerciseTemplate,
+        set: SetEntry,
+        dict: inout [MuscleGroup: Double]
+    ) {
+        let base: Double = selectedMetric == .volume
+            ? set.weight * Double(set.reps)
+            : 1
+
+        // Primary muscle always gets full weight
+        dict[exercise.muscleGroup, default: 0] += base
+
+        // Secondary muscle gets partial weight (if available)
+        if let secondary = exercise.secondaryMuscleGroup {
+            dict[secondary, default: 0] += base * secondaryWeight
+        }
+    }
+    
+    /// Attempts to infer muscle group and create a temporary exercise template from exercise name
+    /// This is a fallback for when the exact exercise isn't found in the library
+    private func inferExerciseFromName(_ name: String) -> ExerciseTemplate? {
+        let nameLower = name.lowercased()
+        
+        // Biceps patterns
+        if nameLower.contains("curl") && !nameLower.contains("leg") && !nameLower.contains("hamstring") {
+            return ExerciseTemplate(
+                name: name,
+                muscleGroup: .biceps,
+                equipment: .dumbbell,
+                secondaryMuscleGroup: .forearms
+            )
+        }
+        
+        // Triceps patterns
+        if nameLower.contains("tricep") || nameLower.contains("pushdown") || 
+           nameLower.contains("overhead extension") || nameLower.contains("skull crusher") {
+            return ExerciseTemplate(
+                name: name,
+                muscleGroup: .triceps,
+                equipment: .dumbbell
+            )
+        }
+        
+        // Chest patterns
+        if nameLower.contains("press") && (nameLower.contains("chest") || nameLower.contains("bench")) {
+            return ExerciseTemplate(
+                name: name,
+                muscleGroup: .chest,
+                equipment: .barbell,
+                secondaryMuscleGroup: .triceps
+            )
+        }
+        
+        if nameLower.contains("fly") || nameLower.contains("flye") {
+            return ExerciseTemplate(
+                name: name,
+                muscleGroup: .chest,
+                equipment: .dumbbell
+            )
+        }
+        
+        // Back patterns
+        if nameLower.contains("row") || nameLower.contains("pulldown") || 
+           nameLower.contains("pull-up") || nameLower.contains("pullup") {
+            return ExerciseTemplate(
+                name: name,
+                muscleGroup: .back,
+                equipment: .cable,
+                secondaryMuscleGroup: .biceps
+            )
+        }
+        
+        if nameLower.contains("deadlift") {
+            return ExerciseTemplate(
+                name: name,
+                muscleGroup: .back,
+                equipment: .barbell,
+                secondaryMuscleGroup: .hamstrings
+            )
+        }
+        
+        // Shoulder patterns
+        if (nameLower.contains("press") || nameLower.contains("raise")) && 
+           (nameLower.contains("shoulder") || nameLower.contains("lateral") || nameLower.contains("front")) {
+            return ExerciseTemplate(
+                name: name,
+                muscleGroup: .shoulders,
+                equipment: .dumbbell
+            )
+        }
+        
+        // Leg patterns
+        if nameLower.contains("squat") || nameLower.contains("leg press") {
+            return ExerciseTemplate(
+                name: name,
+                muscleGroup: .quads,
+                equipment: .barbell,
+                secondaryMuscleGroup: .glutes
+            )
+        }
+        
+        if nameLower.contains("lunge") {
+            return ExerciseTemplate(
+                name: name,
+                muscleGroup: .quads,
+                equipment: .bodyweight,
+                secondaryMuscleGroup: .glutes
+            )
+        }
+        
+        if (nameLower.contains("leg") && nameLower.contains("curl")) || nameLower.contains("hamstring") {
+            return ExerciseTemplate(
+                name: name,
+                muscleGroup: .hamstrings,
+                equipment: .machine
+            )
+        }
+        
+        if nameLower.contains("calf") {
+            return ExerciseTemplate(
+                name: name,
+                muscleGroup: .calves,
+                equipment: .machine
+            )
+        }
+        
+        // Glute patterns
+        if nameLower.contains("glute") || nameLower.contains("hip thrust") {
+            return ExerciseTemplate(
+                name: name,
+                muscleGroup: .glutes,
+                equipment: .barbell
+            )
+        }
+        
+        // Core patterns
+        if nameLower.contains("crunch") || nameLower.contains("sit") || 
+           nameLower.contains("plank") || nameLower.contains("ab") {
+            return ExerciseTemplate(
+                name: name,
+                muscleGroup: .abs,
+                equipment: .bodyweight
+            )
+        }
+        
+        // If we can't infer, return nil (better to skip than guess wrong)
+        return nil
+    }
+    
+    /// Finds an exercise from the library with flexible matching
+    /// Tries exact match first, then case-insensitive, then trimmed/normalized
+    private func findExercise(named name: String) -> ExerciseTemplate? {
+        // 1. Exact match (fastest)
+        if let exact = ExerciseLibrary.all.first(where: { $0.name == name }) {
+            return exact
+        }
+        
+        // 2. Case-insensitive match
+        let nameLower = name.lowercased()
+        if let caseInsensitive = ExerciseLibrary.all.first(where: { $0.name.lowercased() == nameLower }) {
+            return caseInsensitive
+        }
+        
+        // 3. Trimmed and normalized (remove extra spaces, special characters)
+        let normalized = name.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "  ", with: " ")
+        
+        if let trimmed = ExerciseLibrary.all.first(where: { 
+            $0.name.trimmingCharacters(in: .whitespacesAndNewlines)
+                .replacingOccurrences(of: "  ", with: " ") == normalized 
+        }) {
+            return trimmed
+        }
+        
+        // 4. Try without parentheses/descriptions (e.g., "Bicep Curl (Machine)" -> "Bicep Curl")
+        let withoutParens = name.components(separatedBy: "(").first?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? name
+        
+        if let matched = ExerciseLibrary.all.first(where: { 
+            $0.name.components(separatedBy: "(").first?
+                .trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == withoutParens.lowercased()
+        }) {
+            return matched
+        }
+        
+        // Not found - will fall back to inference
+        return nil
+    }
+    
+    #if DEBUG
+    /// Diagnostic function to check which exercises in your sets aren't being found
+    /// Call this temporarily to debug exercise mapping issues
+    private func debugUnmappedExercises() {
+        let uniqueExercises = Set(sets.map { $0.exerciseName })
+        
+        print("=== EXERCISE MAPPING DEBUG ===")
+        print("Total unique exercises in sets: \(uniqueExercises.count)")
+        
+        var foundExact = 0
+        var foundFlexible = 0
+        var foundInferred = 0
+        var notFound = 0
+        
+        for exercise in uniqueExercises.sorted() {
+            if ExerciseLibrary.all.contains(where: { $0.name == exercise }) {
+                foundExact += 1
+                print("✅ EXACT: \(exercise)")
+            } else if let found = findExercise(named: exercise) {
+                foundFlexible += 1
+                print("🔄 FLEXIBLE: \(exercise) -> \(found.name)")
+            } else if let inferred = inferExerciseFromName(exercise) {
+                foundInferred += 1
+                print("🔍 INFERRED: \(exercise) -> \(inferred.muscleGroup.displayName)")
+            } else {
+                notFound += 1
+                print("❌ NOT FOUND: \(exercise)")
+            }
+        }
+        
+        print("\n=== SUMMARY ===")
+        print("Exact matches: \(foundExact)")
+        print("Flexible matches: \(foundFlexible)")
+        print("Inferred: \(foundInferred)")
+        print("Not found: \(notFound)")
+        print("Coverage: \(Int(Double(foundExact + foundFlexible + foundInferred) / Double(uniqueExercises.count) * 100))%")
+    }
+    #endif
+
 
     private struct CollapsibleSectionView<Content: View>: View {
         let title: String
@@ -385,7 +627,8 @@ struct AnalyticsView: View {
     ) -> UndertrainingSeverity {
 
         let total = values.values.reduce(0, +)
-        let average = total / Double(MuscleGroup.allCases.count)
+        // Use tracked muscle groups for consistency
+        let average = total / Double(ExerciseLibrary.trackedMuscleGroups.count)
         let value = values[muscle] ?? 0
         let ratio = average == 0 ? 0 : value / average
 
@@ -432,9 +675,10 @@ struct AnalyticsView: View {
         let total = values.values.reduce(0, +)
         guard total > 0 else { return [] }
 
-        let average = total / Double(MuscleGroup.allCases.count)
+        // Use only tracked muscle groups for consistency
+        let average = total / Double(ExerciseLibrary.trackedMuscleGroups.count)
 
-        return MuscleGroup.allCases.filter { muscle in
+        return ExerciseLibrary.trackedMuscleGroups.filter { muscle in
             let value = values[muscle] ?? 0
             return value < average * thresholdRatio
         }
@@ -639,14 +883,23 @@ struct AnalyticsView: View {
             let maxVal = volumes.values.max() ?? 1
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 12) {
-                ForEach(MuscleGroup.allCases) { group in
+                ForEach(MuscleGroup.modernGroups) { group in
                     let val = volumes[group] ?? 0
                     let intensity = max(0.15, val / maxVal)
 
                     VStack(spacing: 8) {
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.red.opacity(intensity))
-                            .frame(height: 50)
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.red.opacity(intensity))
+                                .frame(height: 50)
+                            
+                            // Show percentage value
+                            let total = volumes.values.reduce(0, +)
+                            let percentage = total > 0 ? Int((val / total) * 100) : 0
+                            Text("\(percentage)%")
+                                .font(.caption.bold())
+                                .foregroundStyle(.white.opacity(0.9))
+                        }
 
                         Text(group.displayName)
                             .font(.caption)
@@ -666,8 +919,23 @@ struct AnalyticsView: View {
 
         var dict: [MuscleGroup: Double] = [:]
         for set in recent {
-            if let ex = ExerciseLibrary.all.first(where: { $0.name == set.exerciseName }) {
-                dict[ex.muscleGroup, default: 0] += set.weight * Double(set.reps)
+            if let ex = findExercise(named: set.exerciseName) {
+                // Auto-migrate legacy exercises before calculating distribution
+                let migratedEx = ExerciseLibrary.autoMigrate(ex)
+                let base = set.weight * Double(set.reps)
+                dict[migratedEx.muscleGroup, default: 0] += base
+                if let secondary = migratedEx.secondaryMuscleGroup {
+                    dict[secondary, default: 0] += base * secondaryWeight
+                }
+            } else {
+                // FALLBACK: If exercise not found in library, try to infer muscle group from name
+                if let inferredExercise = inferExerciseFromName(set.exerciseName) {
+                    let base = set.weight * Double(set.reps)
+                    dict[inferredExercise.muscleGroup, default: 0] += base
+                    if let secondary = inferredExercise.secondaryMuscleGroup {
+                        dict[secondary, default: 0] += base * secondaryWeight
+                    }
+                }
             }
         }
         return dict
@@ -966,12 +1234,13 @@ struct AnalyticsView: View {
         guard !values.isEmpty else { return 100 }
 
         let total = values.values.reduce(0, +)
-        let avg = total / Double(MuscleGroup.allCases.count)
+        // Use only tracked muscle groups for balance calculation
+        let avg = total / Double(ExerciseLibrary.trackedMuscleGroups.count)
         guard avg > 0 else { return 100 }
 
         let deviation = values.values.reduce(0) { sum, value in
             sum + abs(value - avg) / avg
-        } / Double(MuscleGroup.allCases.count)
+        } / Double(ExerciseLibrary.trackedMuscleGroups.count)
 
         return max(0, Int(100 - deviation * 100))
     }
@@ -981,9 +1250,13 @@ struct AnalyticsView: View {
         guard !values.isEmpty else { return nil }
 
         let total = values.values.reduce(0, +)
-        let avg = total / Double(MuscleGroup.allCases.count)
+        // Use only tracked muscle groups
+        let avg = total / Double(ExerciseLibrary.trackedMuscleGroups.count)
 
-        return values
+        // Only consider tracked muscle groups
+        let trackedValues = values.filter { ExerciseLibrary.trackedMuscleGroups.contains($0.key) }
+        
+        return trackedValues
             .min { ($0.value / avg) < ($1.value / avg) }?
             .key
     }
@@ -1044,20 +1317,23 @@ struct AnalyticsView: View {
 
         var dict: [MuscleGroup: Double] = [:]
         for set in relevantSets {
-            if let ex = ExerciseLibrary.all.first(where: { $0.name == set.exerciseName }) {
-                if selectedMetric == .volume {
-                    dict[ex.muscleGroup, default: 0] += set.weight * Double(set.reps)
-                } else {
-                    dict[ex.muscleGroup, default: 0] += 1
+            if let ex = findExercise(named: set.exerciseName) {
+                // Auto-migrate legacy exercises before calculating distribution
+                let migratedEx = ExerciseLibrary.autoMigrate(ex)
+                applyExerciseContribution(migratedEx, set: set, dict: &dict)
+            } else {
+                // FALLBACK: If exercise not found in library, try to infer muscle group from name
+                if let inferredExercise = inferExerciseFromName(set.exerciseName) {
+                    applyExerciseContribution(inferredExercise, set: set, dict: &dict)
                 }
             }
         }
         return dict
     }
 
+
     // MARK: - Radar Chart View (FIXED)
     private func previousDistributionValues() -> [MuscleGroup: Double] {
-        
         let duration: Int
         switch selectedRange {
         case .days7:  duration = 7
@@ -1076,11 +1352,14 @@ struct AnalyticsView: View {
 
         var dict: [MuscleGroup: Double] = [:]
         for set in previousSets {
-            if let ex = ExerciseLibrary.all.first(where: { $0.name == set.exerciseName }) {
-                if selectedMetric == .volume {
-                    dict[ex.muscleGroup, default: 0] += set.weight * Double(set.reps)
-                } else {
-                    dict[ex.muscleGroup, default: 0] += 1
+            if let ex = findExercise(named: set.exerciseName) {
+                // Auto-migrate legacy exercises before calculating distribution
+                let migratedEx = ExerciseLibrary.autoMigrate(ex)
+                applyExerciseContribution(migratedEx, set: set, dict: &dict)
+            } else {
+                // FALLBACK: If exercise not found in library, try to infer muscle group from name
+                if let inferredExercise = inferExerciseFromName(set.exerciseName) {
+                    applyExerciseContribution(inferredExercise, set: set, dict: &dict)
                 }
             }
         }
@@ -1089,17 +1368,26 @@ struct AnalyticsView: View {
     }
 
 
+
     private struct RadarChartView: View {
         let values: [MuscleGroup: Double]
         let previousValues: [MuscleGroup: Double]
         let maxValue: Double
         @Binding var selectedMuscle: MuscleGroup?
+        
+        // Add this to force refresh when data changes
+        private var chartID: String {
+            let valuesHash = values.map { "\($0.key.rawValue):\($0.value)" }.joined(separator: ",")
+            let prevHash = previousValues.map { "\($0.key.rawValue):\($0.value)" }.joined(separator: ",")
+            return "\(valuesHash)|\(prevHash)|\(maxValue)"
+        }
 
         var body: some View {
             GeometryReader { geo in
                 let center = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
                 let radius = min(geo.size.width, geo.size.height) / 2 - 20
-                let muscles = MuscleGroup.allCases
+                // Use the tracked muscle groups from ExerciseLibrary for consistency
+                let muscles = ExerciseLibrary.trackedMuscleGroups
 
                 ZStack {
                     
@@ -1146,8 +1434,8 @@ struct AnalyticsView: View {
                             selectedMuscle == muscles[i] ? .blue : .secondary
                         )
                         .position(
-                            x: center.x + cos(angle) * (radius + 16),
-                            y: center.y + sin(angle) * (radius + 16)
+                            x: center.x + cos(angle) * (radius + 32),
+                            y: center.y + sin(angle) * (radius + 32)
                         )
                         .onTapGesture {
                             selectedMuscle =
@@ -1244,6 +1532,7 @@ struct AnalyticsView: View {
                     
                 }
             }
+            .id(chartID)
         }
 
         private func angleFor(index: Int, count: Int) -> CGFloat {
@@ -1298,9 +1587,7 @@ struct AnalyticsView: View {
             statTile("Volume", "\(Int(stats.volume))")
             statTile("Sets", "\(stats.sets)")
         }
-        .animation(.easeInOut(duration: 0.25), value: selectedMuscle)
-        .animation(.easeInOut(duration: 0.25), value: selectedRange)
-        .animation(.easeInOut(duration: 0.25), value: selectedMetric)
+        .id("\(selectedRange.rawValue)-\(selectedMetric.rawValue)-\(selectedMuscle?.rawValue ?? "all")-\(sets.count)")
     }
 
     private func aggregateStats() -> (workouts: Int, sets: Int, volume: Double, duration: String) {
@@ -1311,13 +1598,22 @@ struct AnalyticsView: View {
 
             guard let selectedMuscle else { return true }
 
-            guard
-                let exercise = ExerciseLibrary.all.first(where: { $0.name == set.exerciseName })
-            else {
+            // Try to find exercise in library first
+            if let exercise = findExercise(named: set.exerciseName) {
+                // Auto-migrate before checking muscle group
+                let migratedEx = ExerciseLibrary.autoMigrate(exercise)
+
+                if migratedEx.muscleGroup == selectedMuscle { return true }
+                if let secondary = migratedEx.secondaryMuscleGroup, secondary == selectedMuscle { return true }
+                return false
+            } else {
+                // FALLBACK: Try to infer muscle group from name
+                if let inferredEx = inferExerciseFromName(set.exerciseName) {
+                    if inferredEx.muscleGroup == selectedMuscle { return true }
+                    if let secondary = inferredEx.secondaryMuscleGroup, secondary == selectedMuscle { return true }
+                }
                 return false
             }
-
-            return exercise.muscleGroup == selectedMuscle
         }
 
         let relevantWorkouts = workouts.filter {
@@ -1335,6 +1631,7 @@ struct AnalyticsView: View {
             duration
         )
     }
+
 
 
     // MARK: - Coach

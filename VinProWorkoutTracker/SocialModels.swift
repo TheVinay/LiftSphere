@@ -37,7 +37,7 @@ struct UserProfile: Identifiable, Codable {
         isPublic: Bool = true,
         totalWorkouts: Int = 0,
         totalVolume: Double = 0,
-        profileVisibility: String = "friendsOnly",
+        profileVisibility: String = "everyone",
         showWorkoutCount: Bool = true,
         showTotalVolume: Bool = true,
         showExerciseNames: Bool = true,

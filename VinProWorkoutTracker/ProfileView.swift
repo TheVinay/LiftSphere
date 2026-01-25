@@ -20,10 +20,14 @@ struct ProfileView: View {
     
     // AuthenticationManager for Apple ID info
     @Environment(AuthenticationManager.self) private var authManager
+    
+    // Social service for username
+    @State private var socialService = SocialService()
 
     @State private var showEditProfile = false
     @State private var showSettings = false
     @State private var showHealthStats = false
+    @State private var showProfileSetup = false
     
     // Collapsible sections
     @State private var isVolumeCardExpanded = true
@@ -136,6 +140,21 @@ struct ProfileView: View {
                             // Name
                             Text(displayName)
                                 .font(.title2.weight(.semibold))
+                            
+                            // Social username (if exists)
+                            if let username = socialService.currentUserProfile?.username {
+                                Text("@\(username)")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                Button {
+                                    showProfileSetup = true
+                                } label: {
+                                    Text("Create social profile")
+                                        .font(.caption)
+                                        .foregroundStyle(.blue)
+                                }
+                            }
 
                             // Stats row
                             HStack(spacing: 24) {
@@ -268,6 +287,13 @@ struct ProfileView: View {
             }
             .sheet(isPresented: $showHealthStats) {
                 HealthStatsView()
+            }
+            .sheet(isPresented: $showProfileSetup) {
+                ProfileSetupView(socialService: socialService)
+            }
+            .task {
+                // Load social profile on appear
+                try? await socialService.fetchCurrentUserProfile()
             }
         }
     }

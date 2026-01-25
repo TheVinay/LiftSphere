@@ -26,7 +26,7 @@ struct WorkoutDetailView: View {
                     HStack(spacing: 20) {
                         StatBadge(
                             icon: "dumbbell.fill",
-                            value: "\(workout.sets.count)",
+                            value: "\(workout.sets?.count ?? 0)",
                             label: "Sets"
                         )
                         
@@ -178,7 +178,7 @@ struct WorkoutDetailView: View {
                             EnhancedExerciseLogRow(
                                 exerciseName: exercise,
                                 allSets: allSets,
-                                workoutSets: workout.sets
+                                workoutSets: workout.sets ?? []
                             )
                         }
                     }
@@ -290,7 +290,7 @@ struct WorkoutDetailView: View {
         }
 
         // Any exercises that have sets in this workout but aren’t listed above
-        let setNames = Set(workout.sets.map { $0.exerciseName })
+        let setNames = Set((workout.sets ?? []).map { $0.exerciseName })
         let extras = setNames.subtracting(seen)
 
         ordered.append(contentsOf: extras.sorted())
@@ -702,7 +702,7 @@ private struct ExercisePickerSheet: View {
                                 action: { selectedMuscleFilter = nil }
                             )
                             
-                            ForEach(MuscleGroup.allCases) { muscle in
+                            ForEach(MuscleGroup.modernGroups) { muscle in
                                 FilterChip(
                                     title: muscle.displayName,
                                     isSelected: selectedMuscleFilter == muscle,

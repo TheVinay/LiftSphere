@@ -1,99 +1,209 @@
 # VinPro / LiftSphere - Complete Project Manifest
 
-**Last Updated:** January 17, 2026 (Saturday Evening)  
-**Manifest Version:** 2.6  
+**Last Updated:** January 24, 2026 (Saturday)  
+**Manifest Version:** 3.1  
 **Purpose:** Comprehensive documentation of all files, features, models, and cross-references
 
-**🆕 LATEST UPDATES (January 18, 2026 - Sunday Evening):**
-- **WEIGHT UNIT PREFERENCE:**
-  - ✅ Added weight unit toggle in Settings → Workouts (lbs ↔ kg)
-  - ✅ Updates display throughout app: ExerciseHistoryView, WorkoutDetailView
-  - ✅ Shows "Weight (lbs)" or "Weight (kg)" in TextField placeholders
-  - ✅ Shows "80.0 lbs × 10" or "80.0 kg × 10" in set history
-  - ✅ Shows "Last: 80.0 lbs × 10" and "PR: 90 lbs × 2" in workout rows
-  - ✅ Data stored as numbers (no conversion), just display preference
-  - ✅ Persisted in AppStorage("weightUnit"), defaults to "lbs"
-  - ✅ Zero breaking changes - UI-only update
-- **BODYWEIGHT EXERCISE AUTO-FILL:**
-  - ✅ Weight field now auto-fills with user's bodyweight from HealthKit
-  - ✅ Works for ALL bodyweight exercises (equipment == .bodyweight)
-  - ✅ Includes: Push-Ups, Squats, Burpees, Planks, Dead Bug, Bird Dog, etc.
-  - ✅ Smart detection via ExerciseTemplate.usesBodyweight property
-  - ✅ Only pre-fills when weight field is empty (user can still override)
-  - ✅ Zero breaking changes - no data model modifications
-  - ✅ Uses existing HealthKitManager integration
+---
 
-**Earlier (January 17, 2026):**
-- **TABATA HIIT WORKOUTS ADDED:**
-  - ✅ Added comprehensive Tabata HIIT program to Browse Workouts
-  - ✅ 8 different Tabata workouts: Core Crusher, Full Body Burn, Leg Destroyer, Upper Body Blast, Cardio Crusher, Total Body Tabata, Ab Ripper, Power Builder
-  - ✅ Each workout follows classic Tabata protocol: 8 rounds × (20s work / 10s rest) = 4 minutes
-  - ✅ All bodyweight exercises, no equipment needed
-  - ✅ Includes proper warmup (3 min) and stretching (3 min)
-  - ✅ Located in BrowseWorkoutsViewNew with timer icon
-- **JSON IMPORT ENHANCEMENTS:**
-  - ✅ Made JSON import available on real devices (removed simulator-only restriction)
-  - ✅ Replaced read-only Text with editable TextEditor for manual paste
-  - ✅ Added comprehensive validation to prevent crashes on malformed JSON
-  - ✅ Added detailed error messages for JSON parsing failures
-  - ✅ Added "Load Sample JSON" button for easy testing
-  - ✅ Enhanced clipboard debugging with detailed logging
-  - ✅ Validates workout structure, exercise names, weight/rep ranges, duration values
-  - ✅ Shows helpful error messages instead of crashing
+## 🚨 CRITICAL UPDATES (January 24, 2026 - Saturday)
 
-**Earlier (January 14, 2026 - Late Evening):**
-- **SOCIAL MODELS COMPLETION:**
-  - ✅ Added FollowRelationship model to SocialModels.swift (was missing!)
-  - ✅ Documented complete social data model architecture
-  - ✅ Added comprehensive SocialService documentation to manifest
-  - ✅ Clarified distinction between FollowRelationship (active) and FriendRelationship (legacy)
-  - ✅ Documented Apple ID integration system with caching
-  - ✅ Documented CloudKit schema requirements
-  - 🔧 Fixed: "Cannot find 'FollowRelationship' in scope" error in SocialService.swift
-  - 📝 Manifest now fully documents all social networking components
+### **BACKWARD COMPATIBILITY & MUSCLE GROUP MODERNIZATION - COMPLETE** ✅
+**Status:** Production Ready
 
-**Earlier (January 14, 2026 - Evening):**
-- **SOCIAL PRIVACY CONTROLS ADDED:**
-  - ✅ Created SocialPrivacySettings.swift - Complete privacy model with presets
-  - ✅ Created SocialPrivacySettingsView.swift - Beautiful privacy UI with quick presets
-  - ✅ Added privacy controls to Settings → Social Privacy
-  - ✅ Added quick access in Friends tab (⋯ menu)
-  - ✅ Users can control: profile visibility, stats sharing, workout sharing, social interactions
-  - ✅ Three presets: Public, Friends Only, Private
-  - ✅ Real-time privacy summary showing what others can see
-- **SOCIAL FEATURES ROADMAP:**
-  - Created SOCIAL_IMPLEMENTATION_ROADMAP.md
-  - Documented complete plan for finishing social features
-  - Privacy foundation complete, integration next
+**Problem:** App had legacy muscle groups (`.arms`, `.legs`, `.core`) causing:
+- Legacy workouts not showing in analytics
+- Users seeing confusing muscle group options in UI
+- Inconsistent tracking between old and new data
 
-**Earlier Today (January 14, 2026):**
-- **SOCIAL FEATURES FIXED:**
-  - ✅ Created SocialModels.swift with proper data models
-  - ✅ Fixed profile persistence by linking to Apple ID (CloudKit userRecordID)
-  - ✅ Added local caching with UserDefaults (profiles persist offline)
-  - ✅ Added username uniqueness validation
-  - ✅ Profiles now properly tied to authenticated iCloud user
-  - ✅ fetchCurrentUserProfile() now queries by appleUserID instead of grabbing first record
-  - ✅ Added FollowRelationship model (simplified following, no bidirectional friends)
-  - ✅ Improved error handling with descriptive SocialError cases
-  - ✅ Added automatic cache management (load on init, save on create/update)
-  - ✅ Added simulator debug mode for UI testing
-- **AUTHENTICATION UX FIXES:**
-  - Fixed "Guest User" incorrectly showing when signed in with Apple ID
-  - Changed detection logic from `userEmail.isEmpty` to `userID.hasPrefix("guest-")`
-  - Guest users now see "Sign in with Apple" button in Account Settings (not "Sign Out")
-  - Apple ID users see "Sign Out" and "Delete Account" options
-  - Updated sign-in sheet to use AuthenticationManager properly
-  - Added AuthenticationServices import to SettingsView
-- **EMPTY STATE IMPROVEMENTS:**
-  - Added "Browse Workouts" button to empty state in ContentView
-  - First-time users now see both "Create Workout" (primary) and "Browse Workouts" (secondary) options
-  - Matches the button styling from WorkoutCreationButtonRow
-  - Makes it easier for new users to discover pre-made workout templates
+**Solution:** Comprehensive backward compatibility system:
+1. ✅ **Added `MuscleGroup.modernGroups`** - Filters out legacy groups from UI
+2. ✅ **Added `primaryModernEquivalent`** - Maps legacy → modern for single selection
+3. ✅ **Smart legacy expansion** - `.muscleGroups` mode expands legacy selections
+4. ✅ **Auto-migration in analytics** - `ExerciseLibrary.autoMigrate()` silently converts
+5. ✅ **Intelligent inference** - `inferModernMuscleGroup()` uses exercise names
+6. ✅ **9 tracked muscle groups** - Clean radar chart visualization
 
-**Previous Updates (January 10, 2026):**
-- **DARK MODE SUPPORT:** Complete dark mode implementation across all views
-- Fixed icon and text colors in SettingsView (all labels now use `.foregroundStyle(.primary)`)
+**Files Modified:**
+- **ExerciseLibrary.swift** - Added modernGroups, primaryModernEquivalent, expanded .muscleGroups case
+- **WorkoutDetailView.swift** - Exercise picker uses modernGroups
+- **LearnView.swift** - Filter pills use modernGroups
+- **AnalyticsView.swift** - Heatmap uses modernGroups, labels moved away from radar chart
+- **HelpView.swift** - Updated exercise count to 150+
+
+**Legacy Mapping:**
+- `.arms` → `.biceps` + `.triceps` (or inferred from name)
+- `.core` → `.abs` + `.obliques` + `.lowerBack` (or inferred)
+- `.legs` → `.quads` + `.hamstrings` + `.calves` (or inferred)
+
+**Tracked Muscle Groups (9 for Analytics):**
+- Chest, Back, Shoulders
+- Biceps, Triceps
+- Quads, Hamstrings, Glutes
+- Abs
+
+**Result:**
+- ✅ Old workouts show correctly in analytics
+- ✅ Users only see modern muscle groups in UI
+- ✅ Duplicate old workouts still works
+- ✅ Clean radar chart with proper spacing
+- ✅ No data loss, fully backward compatible
+
+---
+
+### **ANALYTICS UI ENHANCEMENTS** ✅
+**Status:** Complete
+
+**Improvements:**
+1. ✅ **Muscle Heatmap Percentages** - Each colored box now shows % value
+2. ✅ **Radar Chart Label Spacing** - Labels moved from `radius + 16` to `radius + 32`
+3. ✅ **Better Text Visibility** - White percentage text on colored backgrounds
+4. ✅ **No Overlap** - Chart polygon won't overlap muscle group labels
+
+**Files Modified:**
+- **AnalyticsView.swift** (2 changes)
+
+---
+
+## 🆕 PREVIOUS UPDATES (January 23, 2026 - Friday)
+
+**Last Updated:** January 23, 2026 (Friday)  
+**Manifest Version:** 3.0  
+**Purpose:** Comprehensive documentation of all files, features, models, and cross-references
+
+---
+
+## 🚨 CRITICAL UPDATES (January 23, 2026 - Friday)
+
+### **CLOUDKIT SYNC FOR WORKOUTS - COMPLETELY FIXED** ✅
+**Status:** Production Ready
+
+**Problem:** SwiftData CloudKit sync was failing with schema errors, app fell back to local-only storage
+
+**Solution:** Fixed all CloudKit schema requirements:
+1. ✅ **All properties have default values** (required by CloudKit)
+2. ✅ **Inverse relationships added** (`SetEntry.workout ↔ Workout.sets`)
+3. ✅ **Made `sets` relationship optional** (`[SetEntry]?`)
+4. ✅ **Updated 23+ code locations** to handle optional `sets`
+
+**Files Modified:**
+- **Models.swift** - Added defaults, inverse relationships, made `sets` optional
+- **ContentView.swift** - 7 fixes for optional `sets`
+- **WorkoutDetailView.swift** - 3 fixes for optional `sets`
+- **ExerciseHistoryView.swift** - 6 fixes for optional `sets`
+- **WorkoutExportSupport.swift** - 7 fixes for optional `sets`
+
+**Result:**
+- ✅ Cross-device sync works (iPhone ↔ iPad ↔ Mac)
+- ✅ Automatic iCloud backup
+- ✅ Real-time sync within seconds
+- ✅ Offline support with automatic sync when online
+- ✅ Zero data loss, automatic migration
+
+**Documentation:** See `CLOUDKIT_SYNC_FIXED.md`
+
+---
+
+### **SOCIAL FEATURES - PRODUCTION READY** ✅
+**Status:** Fully Functional
+
+**Major Fixes:**
+1. ✅ **CloudKit Indexes Added** (Manual setup required):
+   - `appleUserID` - QUERYABLE (for profile lookup)
+   - `username` - QUERYABLE (for search & uniqueness)
+   - `displayName` - QUERYABLE (optional, improves search)
+
+2. ✅ **User Discovery Fixed:**
+   - Simplified privacy filter: `!= "nobody"` instead of exact matches
+   - Search works for both username and display name
+   - Discover tab shows public users sorted by activity
+   - Real-time error display in UI
+
+3. ✅ **Username Display Added:**
+   - ProfileView now shows `@username` below display name
+   - "Create social profile" button if no profile exists
+   - Auto-loads profile on tab open
+   - Falls back gracefully if profile deleted from CloudKit
+
+4. ✅ **Username Uniqueness Enforced:**
+   - Normalized to lowercase before saving
+   - Checks CloudKit for duplicates before creating
+   - Clear error messages: "Username 'josh' is already taken"
+   - Works on both simulator and device
+
+5. ✅ **Debug Logging:**
+   - Comprehensive emoji-based logging (🔍 ✅ ❌ ⚠️)
+   - All debug logs wrapped in `#if DEBUG` (production-safe)
+   - Error messages still logged for crash reports
+   - Visual error display in UI
+
+6. ✅ **Stale Cache Handling:**
+   - Auto-clears cache if profile not found in CloudKit
+   - "Clear Local Cache" in DEBUG menu
+   - Proper error handling for network issues
+
+**Files Modified:**
+- **SocialService.swift** - Search fixes, debug logging, username normalization
+- **SocialModels.swift** - Default visibility changed to "everyone"
+- **SocialPrivacySettings.swift** - Default preset changed to "publicPreset"
+- **ProfileView.swift** - Show username, profile creation button
+- **ProfileSetupView.swift** - Better error handling, normalize username
+- **FriendsView.swift** - Auto-clear stale cache, error display, better UI
+
+**Privacy Defaults:**
+- `profileVisibility` = "everyone" (more discoverable)
+- `whoCanFollow` = "everyone" (instant follow)
+- Users can change in Settings → Social Privacy
+
+**Documentation:** See `CRITICAL_SOCIAL_FIXES.md`, `DEBUG_PRODUCTION_SAFETY.md`, `STRING_CONSISTENCY_FIX.md`
+
+---
+
+### **REQUIRED MANUAL STEPS BEFORE RELEASE** ⚠️
+
+**CloudKit Dashboard Setup (5 minutes):**
+1. Go to https://icloud.developer.apple.com/dashboard/
+2. Select container: `iCloud.com.vinay.VinProWorkoutTracker`
+3. Navigate to: Schema → Public Database → UserProfile
+4. Add indexes:
+   - **appleUserID** - Type: QUERYABLE
+   - **username** - Type: QUERYABLE
+   - **displayName** - Type: QUERYABLE (optional)
+5. Wait 30-60 seconds for deployment
+
+**Without these indexes:**
+- ❌ Users can't find their profiles
+- ❌ Search returns no results
+- ❌ Username uniqueness not enforced
+
+---
+
+## 🆕 PREVIOUS UPDATES (January 18, 2026)
+
+**WEIGHT UNIT PREFERENCE:**
+- ✅ Added weight unit toggle in Settings → Workouts (lbs ↔ kg)
+- ✅ Updates display throughout app
+- ✅ Persisted in AppStorage, defaults to "lbs"
+
+**BODYWEIGHT EXERCISE AUTO-FILL:**
+- ✅ Weight field auto-fills from HealthKit for bodyweight exercises
+- ✅ Works via ExerciseTemplate.usesBodyweight property
+- ✅ User can override value
+
+**TABATA HIIT WORKOUTS:**
+- ✅ 8 Tabata workouts added to Browse Workouts
+- ✅ Classic protocol: 8 rounds × (20s work / 10s rest)
+- ✅ All bodyweight, no equipment needed
+
+**JSON IMPORT ENHANCEMENTS:**
+- ✅ Works on real devices (not just simulator)
+- ✅ Editable TextEditor for paste
+- ✅ Comprehensive validation prevents crashes
+- ✅ Detailed error messages
+
+---
+
+## 📋 DATA MODELS (UPDATED FOR CLOUDKIT)
 - Fixed bulk action buttons in ContentView (Archive, Unarchive, Export now blue)
 - Fixed "Add exercise" buttons in WorkoutDetailView (Primary & Accessory editors)
 - Fixed "Add set" button and Exercise Information icon in ExerciseHistoryView
@@ -361,68 +471,89 @@
 
 ## DATA MODELS (CONTINUED)
 
-### Models.swift
+### Models.swift ✅ UPDATED FOR CLOUDKIT
 
-#### `SetEntry` (@Model - SwiftData)
+#### `SetEntry` (@Model - SwiftData) - CloudKit Compatible
 - **Type:** SwiftData model class
 - **Purpose:** Individual set record (weight × reps)
-- **Properties:**
-  - `exerciseName: String`
-  - `weight: Double`
-  - `reps: Int`
-  - `timestamp: Date`
+- **Properties (ALL with defaults for CloudKit):**
+  - `exerciseName: String = ""`
+  - `weight: Double = 0`
+  - `reps: Int = 0`
+  - `timestamp: Date = Date()`
+  - `isOneRepMax: Bool = false` - Flag for actual 1RM tests
+  - **🆕 `workout: Workout?`** - INVERSE RELATIONSHIP (required by CloudKit)
 - **Computed Properties:**
   - `volume: Double` - Returns weight × reps
-- **Relationships:** Owned by `Workout` via cascade delete
+- **CloudKit Changes:**
+  - ✅ All properties have default values
+  - ✅ Inverse relationship to `Workout.sets`
+  - ✅ Enables CloudKit sync
 
-#### `Workout` (@Model - SwiftData)
+#### `Workout` (@Model - SwiftData) - CloudKit Compatible
 - **Type:** SwiftData model class (PRIMARY DATA MODEL)
 - **Purpose:** Core workout record with plan, execution, and metadata
-- **Properties:**
-  - `date: Date`
-  - `name: String`
-  - `isCompleted: Bool` (default: false)
-  - `isArchived: Bool` (default: false)
-  - `warmupMinutes: Int`
-  - `coreMinutes: Int`
-  - `stretchMinutes: Int`
-  - `mainExercises: [String]` - Array of exercise names
-  - `coreExercises: [String]` - Accessory/core exercises
-  - `stretches: [String]` - Stretch names
-  - `notes: String` (default: "")
-  - `sets: [SetEntry]` - @Relationship with cascade delete
+- **Properties (ALL with defaults for CloudKit):**
+  - `date: Date = Date()`
+  - `name: String = ""`
+  - `isCompleted: Bool = false`
+  - `isArchived: Bool = false`
+  - `warmupMinutes: Int = 0`
+  - `coreMinutes: Int = 0`
+  - `stretchMinutes: Int = 0`
+  - `mainExercises: [String] = []` - Array of exercise names
+  - `coreExercises: [String] = []` - Accessory/core exercises
+  - `stretches: [String] = []` - Stretch names
+  - `notes: String = ""`
+  - **🆕 `sets: [SetEntry]?`** - OPTIONAL with inverse (required by CloudKit)
+- **Relationship:**
+  - `@Relationship(deleteRule: .cascade, inverse: \SetEntry.workout)`
 - **Computed Properties:**
-  - `totalVolume: Double` - Sum of all sets' volume
+  - `totalVolume: Double` - Returns `sets?.reduce(0) { $0 + $1.volume } ?? 0`
+- **CloudKit Changes:**
+  - ✅ All properties have default values
+  - ✅ `sets` is now optional (`[SetEntry]?`)
+  - ✅ Inverse relationship specified
+  - ✅ Enables CloudKit sync
 - **Key Behaviors:**
   - Cascade deletes all SetEntry when deleted
   - Supports archiving without deletion
   - Completion tracking for HealthKit integration
+  - **Code must handle optional `sets`** (23+ locations updated)
 
-#### `CustomWorkoutTemplate` (@Model - SwiftData)
+#### `CustomWorkoutTemplate` (@Model - SwiftData) - CloudKit Compatible
 - **Type:** SwiftData model class
 - **Purpose:** Reusable workout templates
-- **Properties:**
-  - `name: String`
-  - `dayOfWeek: String?` - Optional day assignment
-  - `createdDate: Date`
-  - `warmupMinutes: Int`
-  - `coreMinutes: Int`
-  - `stretchMinutes: Int`
-  - `mainExercises: [String]`
-  - `coreExercises: [String]`
-  - `stretches: [String]`
+- **Properties (ALL with defaults for CloudKit):**
+  - `name: String = ""`
+  - `dayOfWeek: String? = nil` - Optional day assignment
+  - `createdDate: Date = Date()`
+  - `warmupMinutes: Int = 5`
+  - `coreMinutes: Int = 5`
+  - `stretchMinutes: Int = 5`
+  - `mainExercises: [String] = []`
+  - `coreExercises: [String] = []`
+  - `stretches: [String] = []`
 - **Methods:**
   - `toWorkout() -> Workout` - Converts template to new Workout instance
+- **CloudKit Changes:**
+  - ✅ All properties have default values
+  - ✅ Enables CloudKit sync
+
+**⚠️ IMPORTANT:** Code throughout app updated to handle optional `sets`. Use:
+- `workout.sets?.count ?? 0` instead of `workout.sets.count`
+- `workout.sets?.append()` with nil check instead of direct append
+- `(workout.sets ?? [])` when need non-optional array
 
 ---
 
 ## APP ARCHITECTURE
-### VinProWorkoutTrackerApp.swift (@main)
+### VinProWorkoutTrackerApp.swift (@main) - ✅ CloudKit Enabled
 - **Type:** App entry point
 - **SwiftData Schema:** Workout, SetEntry, CustomWorkoutTemplate
 - **Persistence Strategy:**
-  1. Attempts CloudKit sync (`.automatic`)
-  2. Falls back to local-only if CloudKit fails
+  1. ✅ **Attempts CloudKit sync** (`.automatic`) - NOW WORKS!
+  2. Falls back to local-only if CloudKit fails (should not happen now)
   3. Last resort: in-memory storage
 - **Authentication:** Uses `AuthenticationManager` (Observable)
 - **Theme Support:** AppStorage with 3 modes (0=System, 1=Light, 2=Dark)
@@ -430,6 +561,9 @@
   - Shows `SignInView` if not authenticated
   - Shows `RootView` if authenticated
 - **Model Container:** Shared across app via `.modelContainer()`
+- **Expected Console Output:**
+  - ✅ `"✅ ModelContainer initialized successfully with CloudKit"` (after fixes)
+  - ❌ Should NOT see: `"⚠️ Failed to initialize ModelContainer with CloudKit"`
 
 ### AuthenticationManager.swift (@Observable)
 - **Type:** Observable class

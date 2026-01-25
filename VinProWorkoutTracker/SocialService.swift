@@ -123,20 +123,35 @@ class SocialService {
             let appleUserID = try await getAppleUserID()
             print("✅ Got Apple User ID: \(appleUserID)")
             
+            // Normalize username (lowercase, trim whitespace)
+            let normalizedUsername = username.lowercased().trimmingCharacters(in: .whitespaces)
+            print("🔍 Checking username availability: '\(normalizedUsername)'")
+            
             // Check if username is already taken
-            let usernameCheck = NSPredicate(format: "username == %@", username)
+            let usernameCheck = NSPredicate(format: "username == %@", normalizedUsername)
             let usernameQuery = CKQuery(recordType: "UserProfile", predicate: usernameCheck)
+            
+            #if DEBUG
+            print("🔍 Executing username uniqueness check...")
+            #endif
+            
             let existingResults = try await publicDatabase.records(matching: usernameQuery, desiredKeys: ["username"], resultsLimit: 1)
             
+            #if DEBUG
+            print("🔍 Found \(existingResults.matchResults.count) existing profiles with this username")
+            #endif
+            
             if !existingResults.matchResults.isEmpty {
-                print("❌ Username already taken: \(username)")
+                print("❌ Username already taken: \(normalizedUsername)")
                 throw SocialError.usernameAlreadyTaken
             }
+            
+            print("✅ Username is available")
             
             // Create profile with Apple User ID link
             let profile = UserProfile(
                 appleUserID: appleUserID,
-                username: username,
+                username: normalizedUsername,
                 displayName: displayName,
                 bio: bio
             )
@@ -300,30 +315,86 @@ class SocialService {
     
     /// Search for users by username or display name (privacy-aware)
     func searchUsers(query: String) async throws -> [UserProfile] {
-        #if targetEnvironment(simulator)
-        print("⚠️ DEBUG: Search in simulator - CloudKit queries may not work")
-        // Return empty in simulator for now
-        return []
-        #else
+        #if DEBUG
+        print("🔍 ========== SEARCH USERS DEBUG ==========")
+        print("🔍 Query: '\(query)'")
+        print("🔍 Current user: \(currentUserProfile?.username ?? "nil")")
+        #endif
+        
         let predicate = NSPredicate(format: "username CONTAINS[cd] %@ OR displayName CONTAINS[cd] %@", query, query)
         let ckQuery = CKQuery(recordType: "UserProfile", predicate: predicate)
         
+        #if targetEnvironment(simulator)
+        print("⚠️ DEBUG: Search in simulator - CloudKit queries may not work properly")
+        // Attempt search anyway - might work if iCloud configured
+        #endif
+        
+        #if DEBUG
+        print("🔍 Executing CloudKit query...")
+        #endif
         let results = try await publicDatabase.records(matching: ckQuery, desiredKeys: nil, resultsLimit: 20)
+        #if DEBUG
+        print("🔍 CloudKit returned \(results.matchResults.count) raw results")
+        #endif
         
         var profiles: [UserProfile] = []
-        for result in results.matchResults {
-            if let record = try? result.1.get(),
-               let profile = UserProfile(from: record),
-               profile.id != currentUserProfile?.id, // Don't include yourself
-               profile.isPublic, // ✅ PRIVACY: Only show public profiles
-               profile.profileVisibility == "everyone" || profile.profileVisibility == "friendsOnly" { // ✅ Not fully private
-                profiles.append(profile)
+        for (index, result) in results.matchResults.enumerated() {
+            #if DEBUG
+            print("🔍 Processing result \(index + 1)...")
+            #endif
+            
+            if let record = try? result.1.get() {
+                #if DEBUG
+                print("   ✅ Got record: \(record.recordID.recordName)")
+                print("   - username: \(record["username"] as? String ?? "nil")")
+                print("   - displayName: \(record["displayName"] as? String ?? "nil")")
+                print("   - isPublic: \(record["isPublic"] as? Int ?? -1)")
+                print("   - profileVisibility: \(record["profileVisibility"] as? String ?? "nil")")
+                #endif
+                
+                if let profile = UserProfile(from: record) {
+                    #if DEBUG
+                    print("   ✅ Parsed profile successfully")
+                    
+                    // Check filters
+                    let isSelf = profile.id == currentUserProfile?.id
+                    let isPublic = profile.isPublic
+                    let visibilityOK = profile.profileVisibility != "nobody"
+                    
+                    print("   - Is self: \(isSelf)")
+                    print("   - Is public: \(isPublic)")
+                    print("   - Visibility: '\(profile.profileVisibility)' (OK: \(visibilityOK))")
+                    #endif
+                    
+                    if profile.id != currentUserProfile?.id, // Don't include yourself
+                       profile.isPublic, // ✅ PRIVACY: Only show public profiles
+                       profile.profileVisibility != "nobody" { // ✅ Exclude fully private profiles
+                        profiles.append(profile)
+                        #if DEBUG
+                        print("   ✅ ADDED TO RESULTS")
+                        #endif
+                    } else {
+                        #if DEBUG
+                        print("   ❌ FILTERED OUT")
+                        #endif
+                    }
+                } else {
+                    #if DEBUG
+                    print("   ❌ Could not parse profile from record")
+                    #endif
+                }
+            } else {
+                #if DEBUG
+                print("   ❌ Could not get record")
+                #endif
             }
         }
         
+        #if DEBUG
         print("✅ Found \(profiles.count) users matching '\(query)' (privacy-filtered)")
-        return profiles
+        print("🔍 ========================================")
         #endif
+        return profiles
     }
     
     /// Follow a user (privacy-aware, respects whoCanFollow setting)
@@ -518,38 +589,97 @@ class SocialService {
         isLoading = true
         defer { isLoading = false }
         
-        print("🔍 Fetching suggested users...")
+        #if DEBUG
+        print("🔍 ========== FETCH SUGGESTED USERS DEBUG ==========")
+        print("🔍 Current user: \(currentUser.username)")
+        #endif
         
         #if targetEnvironment(simulator)
-        print("⚠️ DEBUG: Simulator - suggested users will be empty")
-        self.suggestedUsers = []
-        #else
+        print("⚠️ DEBUG: Simulator - CloudKit queries may not work properly")
+        // Attempt to fetch anyway - might work if iCloud configured
+        #endif
+        
         do {
             // Fetch public profiles, sorted by workout count
             let predicate = NSPredicate(format: "isPublic == %d", 1)
             let query = CKQuery(recordType: "UserProfile", predicate: predicate)
             query.sortDescriptors = [NSSortDescriptor(key: "totalWorkouts", ascending: false)]
             
+            #if DEBUG
+            print("🔍 Executing CloudKit query for suggested users...")
+            #endif
             let results = try await publicDatabase.records(matching: query, desiredKeys: nil, resultsLimit: 20)
+            #if DEBUG
+            print("🔍 CloudKit returned \(results.matchResults.count) raw results")
+            #endif
             
             var profiles: [UserProfile] = []
             let followingIDs = Set(friends.map { $0.id })
+            #if DEBUG
+            print("🔍 Already following \(followingIDs.count) users")
+            #endif
             
-            for result in results.matchResults {
-                if let record = try? result.1.get(),
-                   let profile = UserProfile(from: record),
-                   profile.id != currentUser.id, // Don't suggest yourself
-                   !followingIDs.contains(profile.id) { // Don't suggest people you already follow
-                    profiles.append(profile)
+            for (index, result) in results.matchResults.enumerated() {
+                #if DEBUG
+                print("🔍 Processing result \(index + 1)...")
+                #endif
+                
+                if let record = try? result.1.get() {
+                    #if DEBUG
+                    print("   ✅ Got record: \(record.recordID.recordName)")
+                    print("   - username: \(record["username"] as? String ?? "nil")")
+                    print("   - displayName: \(record["displayName"] as? String ?? "nil")")
+                    print("   - isPublic: \(record["isPublic"] as? Int ?? -1)")
+                    print("   - totalWorkouts: \(record["totalWorkouts"] as? Int ?? 0)")
+                    #endif
+                    
+                    if let profile = UserProfile(from: record) {
+                        #if DEBUG
+                        print("   ✅ Parsed profile successfully")
+                        
+                        let isSelf = profile.id == currentUser.id
+                        let alreadyFollowing = followingIDs.contains(profile.id)
+                        
+                        print("   - Is self: \(isSelf)")
+                        print("   - Already following: \(alreadyFollowing)")
+                        #endif
+                        
+                        if profile.id != currentUser.id, // Don't suggest yourself
+                           !followingIDs.contains(profile.id) { // Don't suggest people you already follow
+                            profiles.append(profile)
+                            #if DEBUG
+                            print("   ✅ ADDED TO SUGGESTIONS")
+                            #endif
+                        } else {
+                            #if DEBUG
+                            print("   ❌ FILTERED OUT")
+                            #endif
+                        }
+                    } else {
+                        #if DEBUG
+                        print("   ❌ Could not parse profile from record")
+                        #endif
+                    }
+                } else {
+                    #if DEBUG
+                    print("   ❌ Could not get record")
+                    #endif
                 }
             }
             
             self.suggestedUsers = profiles
+            #if DEBUG
             print("✅ Found \(profiles.count) suggested users")
+            #endif
         } catch {
             self.errorMessage = error.localizedDescription
             print("❌ Error fetching suggested users: \(error)")
+            #if DEBUG
+            print("❌ Error details: \(error.localizedDescription)")
+            #endif
         }
+        #if DEBUG
+        print("🔍 ==================================================")
         #endif
     }
     

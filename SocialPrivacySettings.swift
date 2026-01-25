@@ -56,9 +56,17 @@ struct SocialPrivacySettings: Codable, Equatable {
     // MARK: - Enums
     
     enum Visibility: String, Codable, CaseIterable {
-        case everyone = "Everyone"
-        case friendsOnly = "Friends Only"
-        case nobody = "Only Me"
+        case everyone = "everyone"
+        case friendsOnly = "friendsOnly"
+        case nobody = "nobody"
+        
+        var displayName: String {
+            switch self {
+            case .everyone: return "Everyone"
+            case .friendsOnly: return "Friends Only"
+            case .nobody: return "Only Me"
+            }
+        }
         
         var description: String {
             switch self {
@@ -81,10 +89,19 @@ struct SocialPrivacySettings: Codable, Equatable {
     }
     
     enum FollowPermission: String, Codable, CaseIterable {
-        case everyone = "Everyone"
-        case friendsOnly = "Friends of Friends"
-        case approvalRequired = "Approval Required"
-        case nobody = "No One"
+        case everyone = "everyone"
+        case friendsOnly = "friendsOnly"
+        case approvalRequired = "approvalRequired"
+        case nobody = "nobody"
+        
+        var displayName: String {
+            switch self {
+            case .everyone: return "Everyone"
+            case .friendsOnly: return "Friends of Friends"
+            case .approvalRequired: return "Approval Required"
+            case .nobody: return "No One"
+            }
+        }
         
         var description: String {
             switch self {
@@ -159,8 +176,8 @@ struct SocialPrivacySettings: Codable, Equatable {
            let settings = try? JSONDecoder().decode(SocialPrivacySettings.self, from: data) {
             return settings
         }
-        // Default: Friends only for new users
-        return friendsOnlyPreset
+        // Default: Public for better discoverability
+        return publicPreset
     }
     
     func save() {

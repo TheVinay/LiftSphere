@@ -72,13 +72,24 @@ struct ProfileSetupView: View {
         
         do {
             try await socialService.createUserProfile(
-                username: username,
+                username: username.lowercased().trimmingCharacters(in: .whitespaces), // Normalize username
                 displayName: displayName,
                 bio: bio
             )
             dismiss()
+        } catch let error as SocialError {
+            // Handle specific social errors
+            switch error {
+            case .usernameAlreadyTaken, .usernameTaken:
+                errorMessage = "Username '\(username)' is already taken. Please choose another."
+            case .notAuthenticated:
+                errorMessage = "Please sign in to iCloud to create a social profile."
+            default:
+                errorMessage = error.localizedDescription
+            }
+            isCreating = false
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = "Failed to create profile: \(error.localizedDescription)"
             isCreating = false
         }
     }

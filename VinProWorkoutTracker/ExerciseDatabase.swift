@@ -99,6 +99,59 @@ struct ExerciseDatabase {
         // ADDITIONAL
         "Incline Dumbbell Press (Neutral)": "Upper Chest, Front Shoulders, Triceps",
         "Cable Fly": "Chest",
+        
+        // BACKWARD COMPATIBILITY ALIASES
+        "Cable Row": "Upper Back, Lats, Biceps",
+        "Dumbbell Row": "Lats, Upper Back, Biceps",
+        "Shoulder Press": "Shoulders, Triceps",
+        "Lateral Raise": "Side Shoulders",
+        "Dumbbell Lateral Raise": "Side Shoulders",
+        "Cable Rear Delt Fly": "Rear Shoulders, Upper Back",
+        "Romanian Deadlift": "Hamstrings, Glutes, Lower Back",
+        "Calf Raise on Leg Press": "Calves",
+        "Dumbbell Curl": "Biceps, Forearms",
+        "Tricep Pushdown": "Triceps",
+        "Band Pull-Apart": "Rear Shoulders, Upper Back",
+        "Scapular Retraction": "Upper Back, Traps",
+        
+        // 🆕 MACHINE EXERCISES - CHEST
+        "Incline Machine Press": "Upper Chest, Front Shoulders, Triceps",
+        "Pec Fly (Machine)": "Chest, Front Shoulders",
+        "Chest Dip (Machine)": "Lower Chest, Triceps",
+        "Cable Chest Press": "Chest, Front Shoulders, Triceps",
+        
+        // 🆕 MACHINE EXERCISES - BACK
+        "Seated Row": "Upper Back, Lats, Biceps",
+        "High Row": "Upper Back, Rear Shoulders, Traps",
+        "Pullover Machine": "Lats, Chest, Core",
+        
+        // 🆕 MACHINE EXERCISES - SHOULDERS
+        "Shoulder Press (Machine)": "Shoulders, Triceps",
+        "Lateral Raise (Machine)": "Side Shoulders, Traps",
+        "Rear Delt Fly (Machine)": "Rear Shoulders, Upper Back",
+        
+        // 🆕 MACHINE EXERCISES - LEGS
+        "Hack Squat": "Quads, Glutes",
+        "Lying Leg Curl": "Hamstrings, Glutes",
+        "Standing Leg Curl": "Hamstrings",
+        "Hip Abduction": "Glutes, Outer Thighs",
+        "Hip Adduction": "Inner Thighs, Adductors",
+        "Glute Kickback": "Glutes, Hamstrings",
+        "Standing Calf Raise": "Calves (Gastrocnemius)",
+        "Seated Calf Raise": "Calves (Soleus)",
+        
+        // 🆕 MACHINE EXERCISES - ARMS
+        "Biceps Curl (Machine)": "Biceps, Forearms",
+        "Preacher Curl (Machine)": "Biceps, Forearms",
+        "Triceps Pushdown": "Triceps",
+        "Overhead Triceps Extension": "Triceps, Shoulders",
+        "Triceps Dip (Machine)": "Triceps, Chest, Shoulders",
+        
+        // 🆕 MACHINE EXERCISES - CORE
+        "Ab Crunch (Machine)": "Abs, Core",
+        "Rotary Torso": "Obliques, Core",
+        "Back Extension": "Lower Back, Glutes, Spinal Erectors",
+        "Captain's Chair Knee Raise": "Lower Abs, Hip Flexors",
     ]
     
     // MARK: - Instructions
@@ -555,6 +608,254 @@ struct ExerciseDatabase {
             "Bring handles together in front of chest.",
             "Return to starting position with control."
         ],
+        
+        // BACKWARD COMPATIBILITY ALIASES
+        "Cable Row": [
+            "Sit at cable row with feet on footrests, knees slightly bent.",
+            "Grip handle with arms extended.",
+            "Pull handle to midsection, squeezing shoulder blades.",
+            "Extend arms back slowly with control."
+        ],
+        "Dumbbell Row": [
+            "Bend at hips with one hand supported on bench.",
+            "Hold dumbbell in other hand, arm hanging straight.",
+            "Pull dumbbell to ribcage, driving elbow back.",
+            "Lower slowly and repeat, then switch sides."
+        ],
+        "Shoulder Press": [
+            "Sit with dumbbells at shoulder height.",
+            "Press dumbbells overhead until arms are extended.",
+            "Lower back to shoulder level with control.",
+            "Keep core engaged throughout."
+        ],
+        "Lateral Raise": [
+            "Stand holding dumbbells at sides.",
+            "Raise arms out to sides until parallel with floor.",
+            "Keep slight bend in elbows throughout.",
+            "Lower slowly back to starting position."
+        ],
+        "Dumbbell Lateral Raise": [
+            "Stand holding dumbbells at sides.",
+            "Raise arms out to sides until parallel with floor.",
+            "Keep slight bend in elbows throughout.",
+            "Lower slowly back to starting position."
+        ],
+        "Cable Rear Delt Fly": [
+            "Set cables at shoulder height, cross cables.",
+            "Stand in center and grip opposite handles.",
+            "Pull handles apart and back, squeezing shoulder blades.",
+            "Return to starting position with control."
+        ],
+        "Romanian Deadlift": [
+            "Stand with barbell at hip level, feet hip-width apart.",
+            "Push hips back while lowering bar along thighs.",
+            "Keep back straight and knees slightly bent.",
+            "Drive hips forward to return to standing."
+        ],
+        "Calf Raise on Leg Press": [
+            "Sit in leg press with balls of feet on platform edge.",
+            "Lower heels below platform for a stretch.",
+            "Push up onto toes as high as possible.",
+            "Lower slowly and repeat."
+        ],
+        "Dumbbell Curl": [
+            "Stand with dumbbells at sides, palms facing forward.",
+            "Curl dumbbells toward shoulders.",
+            "Keep elbows stationary at your sides.",
+            "Lower slowly back to starting position."
+        ],
+        "Tricep Pushdown": [
+            "Stand facing cable with bar at upper chest height.",
+            "Grip bar with palms down, elbows at sides.",
+            "Push bar down until arms are fully extended.",
+            "Return slowly to starting position."
+        ],
+        "Band Pull-Apart": [
+            "Hold resistance band at chest height with arms extended.",
+            "Pull band apart by moving hands out to sides.",
+            "Squeeze shoulder blades together.",
+            "Return to starting position with control."
+        ],
+        "Scapular Retraction": [
+            "Stand or sit with arms at sides.",
+            "Squeeze shoulder blades together.",
+            "Hold for a moment, feeling upper back muscles.",
+            "Release and repeat."
+        ],
+        
+        // 🆕 MACHINE EXERCISES - CHEST
+        "Incline Machine Press": [
+            "Adjust seat height so handles align with upper chest.",
+            "Grip handles and press upward and slightly together.",
+            "Extend arms fully without locking elbows.",
+            "Lower with control back to starting position."
+        ],
+        "Pec Fly (Machine)": [
+            "Sit with back firmly against pad, feet flat on floor.",
+            "Place forearms on pads with elbows at shoulder height.",
+            "Bring pads together in front of chest by squeezing pecs.",
+            "Slowly return to starting position with control."
+        ],
+        "Chest Dip (Machine)": [
+            "Adjust seat height and select appropriate assistance weight.",
+            "Grip handles and lean slightly forward.",
+            "Lower body by bending elbows until upper arms are parallel to floor.",
+            "Press back up to starting position, focusing on chest and triceps."
+        ],
+        "Cable Chest Press": [
+            "Set cables to chest height and stand in the middle, one foot forward.",
+            "Hold handles at chest level with elbows bent.",
+            "Press handles forward until arms are extended.",
+            "Slowly return to starting position with control."
+        ],
+        
+        // 🆕 MACHINE EXERCISES - BACK
+        "Seated Row": [
+            "Sit with chest against pad, feet on footrests.",
+            "Grip handles with arms extended forward.",
+            "Pull handles toward midsection, driving elbows back.",
+            "Squeeze shoulder blades together, then slowly extend arms."
+        ],
+        "High Row": [
+            "Adjust seat so handles are at upper chest/shoulder height.",
+            "Grip handles and pull toward upper chest/face.",
+            "Keep elbows high and squeeze shoulder blades together.",
+            "Slowly return to starting position with control."
+        ],
+        "Pullover Machine": [
+            "Adjust seat so your shoulders align with the pivot point.",
+            "Place elbows on pads with arms slightly bent.",
+            "Pull pads down in an arc until they reach your sides.",
+            "Slowly return to starting position, feeling lat stretch."
+        ],
+        
+        // 🆕 MACHINE EXERCISES - SHOULDERS
+        "Shoulder Press (Machine)": [
+            "Adjust seat so handles are at shoulder height.",
+            "Grip handles and press upward until arms are extended.",
+            "Don't lock elbows at the top.",
+            "Lower with control back to shoulder level."
+        ],
+        "Lateral Raise (Machine)": [
+            "Sit with back against pad, arms positioned on pads.",
+            "Raise arms out to the sides until parallel with floor.",
+            "Pause at the top and squeeze shoulders.",
+            "Lower slowly back to starting position."
+        ],
+        "Rear Delt Fly (Machine)": [
+            "Adjust seat height so handles are at shoulder level.",
+            "Sit facing the machine with chest against pad.",
+            "Pull handles back and apart, squeezing shoulder blades.",
+            "Focus on rear delts, not just arms."
+        ],
+        
+        // 🆕 MACHINE EXERCISES - LEGS
+        "Hack Squat": [
+            "Position shoulders under pads, feet shoulder-width on platform.",
+            "Release safety handles and lower by bending knees.",
+            "Descend until thighs are parallel to platform.",
+            "Drive through heels to return to starting position."
+        ],
+        "Lying Leg Curl": [
+            "Lie face down with ankles under the pad.",
+            "Grip handles for stability and curl heels toward glutes.",
+            "Squeeze hamstrings at the top of the movement.",
+            "Lower weight slowly back to starting position."
+        ],
+        "Standing Leg Curl": [
+            "Stand on one leg, position other ankle under the pad.",
+            "Hold handles for balance and curl heel toward glute.",
+            "Squeeze hamstring at the top.",
+            "Lower slowly and repeat, then switch legs."
+        ],
+        "Hip Abduction": [
+            "Sit with back against pad, legs positioned against pads.",
+            "Push legs outward against resistance.",
+            "Pause at maximum abduction and squeeze glutes.",
+            "Slowly return legs together with control."
+        ],
+        "Hip Adduction": [
+            "Sit with back against pad, legs positioned wide against pads.",
+            "Bring legs together against resistance.",
+            "Squeeze inner thighs at the end of the movement.",
+            "Slowly return to starting position with control."
+        ],
+        "Glute Kickback": [
+            "Position knee and hands on pads for support.",
+            "Place foot against the plate or pad behind you.",
+            "Push leg back and up, squeezing glutes.",
+            "Lower with control and repeat, then switch legs."
+        ],
+        "Standing Calf Raise": [
+            "Stand with shoulders under pads, balls of feet on platform.",
+            "Lower heels as far as possible to stretch calves.",
+            "Push up onto toes as high as possible.",
+            "Pause at the top, then lower slowly."
+        ],
+        "Seated Calf Raise": [
+            "Sit with knees under pad, balls of feet on platform.",
+            "Lower heels below the platform for a stretch.",
+            "Push up onto toes as high as possible.",
+            "Pause at top, then lower slowly and repeat."
+        ],
+        
+        // 🆕 MACHINE EXERCISES - ARMS
+        "Biceps Curl (Machine)": [
+            "Sit with arms resting on pad, elbows aligned with pivot.",
+            "Grip handles with underhand grip.",
+            "Curl handles up toward shoulders.",
+            "Lower slowly back to starting position."
+        ],
+        "Preacher Curl (Machine)": [
+            "Adjust seat so armpits rest on top of pad.",
+            "Grip handles with underhand grip, arms extended.",
+            "Curl handles up, keeping upper arms on pad.",
+            "Lower slowly, fully extending arms."
+        ],
+        "Triceps Pushdown": [
+            "Stand facing cable with attachment at upper chest height.",
+            "Grip bar or rope with palms down (or neutral for rope).",
+            "Push down until arms are fully extended.",
+            "Slowly return to starting position, keeping elbows stationary."
+        ],
+        "Overhead Triceps Extension": [
+            "Sit or stand at machine with handles behind head.",
+            "Grip handles and extend arms upward.",
+            "Keep upper arms stationary throughout movement.",
+            "Lower slowly back to starting position."
+        ],
+        "Triceps Dip (Machine)": [
+            "Grip handles and position yourself on the machine.",
+            "Select appropriate assistance weight if using assisted version.",
+            "Lower body by bending elbows until upper arms are parallel.",
+            "Push back up to starting position, focusing on triceps."
+        ],
+        
+        // 🆕 MACHINE EXERCISES - CORE
+        "Ab Crunch (Machine)": [
+            "Sit with back against pad, grip handles above shoulders.",
+            "Crunch forward by flexing abs and pulling handles down.",
+            "Squeeze abs hard at bottom of the movement.",
+            "Slowly return to starting position with control."
+        ],
+        "Rotary Torso": [
+            "Sit with back against pad, secure legs under pads.",
+            "Grip handles and rotate torso to one side.",
+            "Keep hips and legs stationary, only rotate upper body.",
+            "Return to center and repeat on other side."
+        ],
+        "Back Extension": [
+            "Position hips on pad with ankles secured.",
+            "Cross arms over chest or behind head.",
+            "Lower upper body forward, then extend back up.",
+            "Squeeze lower back and glutes at the top."
+        ],
+        "Captain's Chair Knee Raise": [
+            "Position forearms on pads, back against pad.",
+            "Grip handles and hang with legs extended.",
+            "Raise knees toward chest by flexing hips.",
+            "Lower legs slowly with control and repeat."
+        ],
     ]
     
     // MARK: - Form Tips
@@ -991,12 +1292,6 @@ struct ExerciseDatabase {
             "Low impact modification: step side-to-side",
             "Great for warmup or conditioning"
         ],
-        "Front Plank (hold)": [
-            "Hold static position for time",
-            "Keep body in straight line",
-            "Don't let hips sag or pike up",
-            "Focus on breathing throughout hold"
-        ],
         
         // ADDITIONAL
         "Incline Dumbbell Press (Neutral)": [
@@ -1010,6 +1305,254 @@ struct ExerciseDatabase {
             "Focus on chest contraction",
             "Don't let cables pull shoulders forward",
             "Low-back friendly chest isolation"
+        ],
+        
+        // BACKWARD COMPATIBILITY ALIASES
+        "Cable Row": [
+            "Keep torso upright, don't rock back and forth",
+            "Drive elbows back, not just hands",
+            "Squeeze shoulder blades at end of each rep",
+            "Low-back friendly rowing option"
+        ],
+        "Dumbbell Row": [
+            "Keep back flat, core engaged",
+            "Pull with back, not just arm",
+            "Don't rotate torso during movement",
+            "Great for addressing left/right imbalances"
+        ],
+        "Shoulder Press": [
+            "Keep core tight to protect lower back",
+            "Don't arch back excessively",
+            "Press slightly back, not straight up",
+            "Exhale as you press up"
+        ],
+        "Lateral Raise": [
+            "Don't swing or use momentum",
+            "Lead with elbow, not hand",
+            "Stop at shoulder height",
+            "Light weight with perfect form is best"
+        ],
+        "Dumbbell Lateral Raise": [
+            "Don't swing or use momentum",
+            "Lead with elbow, not hand",
+            "Stop at shoulder height",
+            "Light weight with perfect form is best"
+        ],
+        "Cable Rear Delt Fly": [
+            "Keep elbows slightly bent throughout",
+            "Focus on rear delts, not arms",
+            "Don't use momentum",
+            "Great for shoulder health and posture"
+        ],
+        "Romanian Deadlift": [
+            "Keep bar close to body throughout",
+            "Don't round your back",
+            "Feel stretch in hamstrings at bottom",
+            "Not recommended if you have lower back issues"
+        ],
+        "Calf Raise on Leg Press": [
+            "Use full range of motion",
+            "Pause at top for better contraction",
+            "Keep knees locked but not hyperextended",
+            "Great alternative to standing calf raises"
+        ],
+        "Dumbbell Curl": [
+            "Don't swing weights or use momentum",
+            "Keep elbows stationary",
+            "Squeeze biceps at top",
+            "Lower slowly for better results"
+        ],
+        "Tricep Pushdown": [
+            "Keep elbows pinned to sides",
+            "Don't lean forward excessively",
+            "Fully extend arms at bottom",
+            "Focus on triceps, not shoulders"
+        ],
+        "Band Pull-Apart": [
+            "Use light resistance band",
+            "Keep arms straight throughout",
+            "Excellent for shoulder health",
+            "Great warm-up or finisher exercise"
+        ],
+        "Scapular Retraction": [
+            "Focus on squeezing shoulder blades",
+            "Don't shrug shoulders up",
+            "Great for posture improvement",
+            "Can be done throughout the day"
+        ],
+        
+        // 🆕 MACHINE EXERCISES - CHEST
+        "Incline Machine Press": [
+            "Adjust seat carefully for comfortable range of motion",
+            "Don't lock elbows at the top",
+            "Excellent for upper chest development",
+            "Low-back friendly alternative to free weight incline press"
+        ],
+        "Pec Fly (Machine)": [
+            "Don't overstretch at the starting position",
+            "Focus on squeezing chest, not pushing with arms",
+            "Keep shoulder blades back against pad",
+            "Great isolation exercise for chest"
+        ],
+        "Chest Dip (Machine)": [
+            "Lean forward more to emphasize chest over triceps",
+            "Don't go too deep if shoulders feel uncomfortable",
+            "Assisted version helps build strength for bodyweight dips",
+            "Low-back friendly compound exercise"
+        ],
+        "Cable Chest Press": [
+            "Keep core tight for stability",
+            "Stand far enough from cables to maintain tension",
+            "Great for unilateral training (one arm at a time)",
+            "Low-back friendly pressing variation"
+        ],
+        
+        // 🆕 MACHINE EXERCISES - BACK
+        "Seated Row": [
+            "Excellent low-back friendly rowing option",
+            "Chest pad prevents using momentum",
+            "Focus on pulling with back, not just arms",
+            "Keep chest pressed to pad throughout"
+        ],
+        "High Row": [
+            "Targets upper back and rear shoulders",
+            "Keep elbows high, don't pull down",
+            "Great for posture improvement",
+            "Low-back friendly upper back exercise"
+        ],
+        "Pullover Machine": [
+            "Keep core braced throughout",
+            "Don't use excessive weight - focus on form",
+            "Excellent for lat development",
+            "Low-back friendly lat isolation"
+        ],
+        
+        // 🆕 MACHINE EXERCISES - SHOULDERS
+        "Shoulder Press (Machine)": [
+            "Machine provides stability for heavier loads",
+            "Keep core engaged even though seated",
+            "Don't arch lower back excessively",
+            "Low-back friendly shoulder press option"
+        ],
+        "Lateral Raise (Machine)": [
+            "Don't use momentum or swing",
+            "Pause at top for better muscle activation",
+            "Excellent for isolating side delts",
+            "Low-back friendly shoulder isolation"
+        ],
+        "Rear Delt Fly (Machine)": [
+            "Essential for shoulder health and posture",
+            "Keep chest against pad, don't round back",
+            "Use controlled movement, not momentum",
+            "Low-back friendly rear delt work"
+        ],
+        
+        // 🆕 MACHINE EXERCISES - LEGS
+        "Hack Squat": [
+            "Excellent low-back friendly squat variation",
+            "Keep back flat against pad",
+            "Don't lock knees at top",
+            "Great for quad development"
+        ],
+        "Lying Leg Curl": [
+            "Keep hips pressed to pad throughout",
+            "Don't arch lower back",
+            "Great hamstring isolation",
+            "Low-back friendly"
+        ],
+        "Standing Leg Curl": [
+            "Hold machine for balance",
+            "Focus on hamstring contraction, not swinging",
+            "Great for single-leg work",
+            "Low-back friendly"
+        ],
+        "Hip Abduction": [
+            "Don't use excessive weight",
+            "Focus on glute activation",
+            "Important for hip stability",
+            "Low-back friendly"
+        ],
+        "Hip Adduction": [
+            "Essential for inner thigh strength",
+            "Don't slam weight down",
+            "Keep torso upright",
+            "Low-back friendly"
+        ],
+        "Glute Kickback": [
+            "Squeeze glutes at top of movement",
+            "Don't arch lower back excessively",
+            "Focus on hip extension, not lower back",
+            "Excellent for glute isolation"
+        ],
+        "Standing Calf Raise": [
+            "Full range of motion is crucial",
+            "Pause at top and bottom",
+            "Primary calf exercise for size",
+            "Low-back friendly"
+        ],
+        "Seated Calf Raise": [
+            "Emphasizes soleus muscle",
+            "Use full range of motion",
+            "Pause at top for better contraction",
+            "Complements standing calf raises"
+        ],
+        
+        // 🆕 MACHINE EXERCISES - ARMS
+        "Biceps Curl (Machine)": [
+            "Keep upper arms stationary on pad",
+            "Don't let elbows lift off pad",
+            "Excellent for biceps isolation",
+            "Low-back friendly"
+        ],
+        "Preacher Curl (Machine)": [
+            "Prevents cheating and momentum",
+            "Full stretch at bottom is important",
+            "Great for bicep peak development",
+            "Low-back friendly arm exercise"
+        ],
+        "Triceps Pushdown": [
+            "Keep elbows pinned to sides",
+            "Don't lean forward excessively",
+            "Squeeze triceps at bottom",
+            "Classic triceps isolation exercise"
+        ],
+        "Overhead Triceps Extension": [
+            "Targets long head of triceps",
+            "Keep upper arms stationary",
+            "Don't use excessive weight",
+            "Stop if elbows feel uncomfortable"
+        ],
+        "Triceps Dip (Machine)": [
+            "Assisted version builds strength for bodyweight dips",
+            "Lean forward slightly for more chest activation",
+            "Don't go too deep if shoulders hurt",
+            "Compound triceps movement"
+        ],
+        
+        // 🆕 MACHINE EXERCISES - CORE
+        "Ab Crunch (Machine)": [
+            "Excellent for adding resistance to crunches",
+            "Don't pull with arms, crunch with abs",
+            "Keep movement controlled, no jerking",
+            "Low-back friendly when done properly"
+        ],
+        "Rotary Torso": [
+            "Start with light weight to learn movement",
+            "Keep hips stationary",
+            "Targets obliques effectively",
+            "Can help with rotational strength"
+        ],
+        "Back Extension": [
+            "Strengthens lower back and glutes",
+            "Don't hyperextend at top",
+            "Good for back health when done correctly",
+            "Start with bodyweight before adding load"
+        ],
+        "Captain's Chair Knee Raise": [
+            "Don't swing or use momentum",
+            "Focus on using abs, not just hip flexors",
+            "Can progress to leg raises as you get stronger",
+            "Excellent lower ab exercise"
         ],
     ]
 }

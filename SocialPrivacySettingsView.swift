@@ -32,7 +32,7 @@ struct SocialPrivacySettingsView: View {
             Section {
                 Picker("Profile Visibility", selection: $settings.profileVisibility) {
                     ForEach(SocialPrivacySettings.Visibility.allCases, id: \.self) { visibility in
-                        Label(visibility.rawValue, systemImage: visibility.icon)
+                        Label(visibility.displayName, systemImage: visibility.icon)
                             .tag(visibility)
                     }
                 }
@@ -84,7 +84,7 @@ struct SocialPrivacySettingsView: View {
             Section {
                 Picker("Who Can Follow You", selection: $settings.whoCanFollow) {
                     ForEach(SocialPrivacySettings.FollowPermission.allCases, id: \.self) { permission in
-                        Text(permission.rawValue)
+                        Text(permission.displayName)
                             .tag(permission)
                     }
                 }

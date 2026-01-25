@@ -657,7 +657,7 @@ struct ContentView: View {
         )
         
         // Add estimated time for sets (assume 2 minutes per set on average)
-        let estimatedSetsTime = Double(workout.sets.count) * 120 // 2 minutes per set
+        let estimatedSetsTime = Double(workout.sets?.count ?? 0) * 120 // 2 minutes per set
         let totalWorkoutDuration = totalDuration + estimatedSetsTime
         
         print("📝 Attempting to save workout to HealthKit:")
@@ -665,7 +665,7 @@ struct ContentView: View {
         print("   Date: \(workout.date)")
         print("   Duration: \(totalWorkoutDuration / 60) minutes")
         print("   Volume: \(workout.totalVolume) lbs")
-        print("   Sets: \(workout.sets.count)")
+        print("   Sets: \(workout.sets?.count ?? 0)")
         
         do {
             try await healthKitManager.saveWorkout(
@@ -772,7 +772,10 @@ struct ContentView: View {
                             reps: exportedSet.reps,
                             timestamp: exportedSet.timestamp
                         )
-                        workout.sets.append(setEntry)
+                        if workout.sets == nil {
+                            workout.sets = []
+                        }
+                        workout.sets?.append(setEntry)
                     }
                     
                     context.insert(workout)
@@ -906,7 +909,10 @@ struct ContentView: View {
                         reps: exportedSet.reps,
                         timestamp: exportedSet.timestamp
                     )
-                    workout.sets.append(setEntry)
+                    if workout.sets == nil {
+                        workout.sets = []
+                    }
+                    workout.sets?.append(setEntry)
                 }
                 
                 context.insert(workout)
@@ -1067,18 +1073,18 @@ private struct QuickRepeatSheet: View {
                                             .font(.caption)
                                             .foregroundColor(.secondary)
                                         
-                                        if !workout.sets.isEmpty {
+                                        if !(workout.sets?.isEmpty ?? true) {
                                             Text("•")
                                                 .font(.caption)
                                                 .foregroundColor(.secondary)
                                             
-                                            Text("\(workout.sets.count) sets")
+                                            Text("\(workout.sets?.count ?? 0) sets")
                                                 .font(.caption)
                                                 .foregroundColor(.secondary)
                                         }
                                         
                                         if workout.totalVolume > 0 {
-                                            Text("•")
+                                             Text("•")
                                                 .font(.caption)
                                                 .foregroundColor(.secondary)
                                             

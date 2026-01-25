@@ -367,7 +367,7 @@ private struct ExerciseLibraryHelpView: View {
                 HelpSection(title: "Browse Exercises", icon: "book.closed.fill") {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Explore our comprehensive exercise database:")
-                        Text("• 100+ exercises covering all muscle groups")
+                        Text("• 150+ exercises covering all muscle groups")
                         Text("• Organized by muscle group")
                         Text("• Each exercise shows proper form and tips")
                     }

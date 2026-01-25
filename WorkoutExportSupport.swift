@@ -29,7 +29,7 @@ struct ExportedWorkout: Codable {
         mainExercises = workout.mainExercises
         coreExercises = workout.coreExercises
         stretches = workout.stretches
-        sets = workout.sets.map {
+        sets = (workout.sets ?? []).map {
             ExportedSet(
                 exerciseName: $0.exerciseName,
                 weight: $0.weight,
@@ -57,12 +57,12 @@ struct CSVExporter {
         for workout in workouts {
             let dateString = ISO8601DateFormatter().string(from: workout.date)
             
-            if workout.sets.isEmpty {
+            if workout.sets?.isEmpty ?? true {
                 // Workout with no sets
                 csv += "\(dateString),\"\(workout.name)\",No Sets,0,0,0,0,\(workout.warmupMinutes),\(workout.coreMinutes),\(workout.stretchMinutes)\n"
             } else {
                 // Group sets by exercise
-                let groupedSets = Dictionary(grouping: workout.sets) { $0.exerciseName }
+                let groupedSets = Dictionary(grouping: workout.sets ?? []) { $0.exerciseName }
                 
                 for (exerciseName, sets) in groupedSets.sorted(by: { $0.key < $1.key }) {
                     for (index, set) in sets.enumerated() {
@@ -82,7 +82,7 @@ struct CSVExporter {
         
         for workout in workouts {
             let dateString = ISO8601DateFormatter().string(from: workout.date)
-            let totalSets = workout.sets.count
+            let totalSets = workout.sets?.count ?? 0
             let totalVolume = workout.totalVolume
             let completed = workout.isCompleted ? "Yes" : "No"
             let archived = workout.isArchived ? "Yes" : "No"
@@ -160,7 +160,7 @@ struct PDFExporter {
                     .foregroundColor: UIColor.label
                 ]
                 
-                "Total Sets: \(workout.sets.count)".draw(at: CGPoint(x: leftMargin + 15, y: summaryY), withAttributes: summaryAttributes)
+                "Total Sets: \(workout.sets?.count ?? 0)".draw(at: CGPoint(x: leftMargin + 15, y: summaryY), withAttributes: summaryAttributes)
                 "Total Volume: \(Int(workout.totalVolume))".draw(at: CGPoint(x: leftMargin + 15, y: summaryY + 20), withAttributes: summaryAttributes)
                 "Duration: Warmup \(workout.warmupMinutes)m • Core \(workout.coreMinutes)m • Stretch \(workout.stretchMinutes)m".draw(at: CGPoint(x: leftMargin + 15, y: summaryY + 40), withAttributes: summaryAttributes)
                 
@@ -185,7 +185,7 @@ struct PDFExporter {
                         yPosition += 20
                         
                         // Show sets for this exercise
-                        let exerciseSets = workout.sets.filter { $0.exerciseName == exercise }
+                        let exerciseSets = (workout.sets ?? []).filter { $0.exerciseName == exercise }
                         if !exerciseSets.isEmpty {
                             for (index, set) in exerciseSets.enumerated() {
                                 let setAttributes: [NSAttributedString.Key: Any] = [
@@ -221,7 +221,7 @@ struct PDFExporter {
                         yPosition += 20
                         
                         // Show sets for accessory exercises too
-                        let exerciseSets = workout.sets.filter { $0.exerciseName == exercise }
+                        let exerciseSets = (workout.sets ?? []).filter { $0.exerciseName == exercise }
                         if !exerciseSets.isEmpty {
                             for (index, set) in exerciseSets.enumerated() {
                                 let setAttributes: [NSAttributedString.Key: Any] = [

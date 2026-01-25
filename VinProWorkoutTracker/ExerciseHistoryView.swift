@@ -48,7 +48,7 @@ struct ExerciseHistoryView: View {
     }
 
     private var todaySets: [SetEntry] {
-        workout.sets.filter { $0.exerciseName == exerciseName }
+        (workout.sets ?? []).filter { $0.exerciseName == exerciseName }
     }
 
     // MARK: - Global bests (before adding new set)
@@ -519,8 +519,8 @@ struct ExerciseHistoryView: View {
     
     private func deleteSet(_ set: SetEntry) {
         // Remove from workout's sets array if it's part of this workout
-        if let index = workout.sets.firstIndex(where: { $0.id == set.id }) {
-            workout.sets.remove(at: index)
+        if let index = (workout.sets ?? []).firstIndex(where: { $0.id == set.id }) {
+            workout.sets?.remove(at: index)
         }
         
         // Delete from context
@@ -536,7 +536,10 @@ struct ExerciseHistoryView: View {
             reps: set.reps
         )
         
-        workout.sets.append(newSet)
+        if workout.sets == nil {
+            workout.sets = []
+        }
+        workout.sets?.append(newSet)
         context.insert(newSet)
         try? context.save()
         
@@ -556,7 +559,10 @@ struct ExerciseHistoryView: View {
             isOneRepMax: true
         )
         
-        workout.sets.append(oneRMSet)
+        if workout.sets == nil {
+            workout.sets = []
+        }
+        workout.sets?.append(oneRMSet)
         context.insert(oneRMSet)
         try? context.save()
         
@@ -632,7 +638,10 @@ struct ExerciseHistoryView: View {
             reps: reps
         )
 
-        workout.sets.append(newSet)
+        if workout.sets == nil {
+            workout.sets = []
+        }
+        workout.sets?.append(newSet)
         context.insert(newSet)
         try? context.save()
 

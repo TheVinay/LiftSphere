@@ -120,7 +120,7 @@ struct FriendsView: View {
             }
         }
         .overlay {
-            if !searchText.isEmpty && !searchResults.isEmpty {
+            if !searchText.isEmpty {
                 searchResultsView
             }
         }
@@ -208,10 +208,28 @@ struct FriendsView: View {
                 List {
                     Section("Suggested Users") {
                         if socialService.suggestedUsers.isEmpty {
-                            Text("No suggestions available")
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .listRowBackground(Color.clear)
+                            VStack(spacing: 12) {
+                                Text("No suggestions available")
+                                    .foregroundStyle(.secondary)
+                                
+                                if let errorMessage = socialService.errorMessage {
+                                    Text("Error: \(errorMessage)")
+                                        .font(.caption)
+                                        .foregroundStyle(.red)
+                                        .multilineTextAlignment(.center)
+                                }
+                                
+                                Button("Retry") {
+                                    Task {
+                                        await socialService.fetchSuggestedUsers()
+                                    }
+                                }
+                                .buttonStyle(.bordered)
+                                .padding(.top, 8)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding()
+                            .listRowBackground(Color.clear)
                         } else {
                             ForEach(socialService.suggestedUsers) { user in
                                 NavigationLink {
@@ -239,14 +257,36 @@ struct FriendsView: View {
     private var searchResultsView: some View {
         List {
             Section("Search Results") {
-                ForEach(searchResults) { user in
-                    NavigationLink {
-                        UserProfileView(
-                            user: user,
-                            socialService: socialService
-                        )
-                    } label: {
-                        FriendRowView(user: user)
+                if isSearching {
+                    HStack {
+                        ProgressView()
+                        Text("Searching...")
+                            .foregroundStyle(.secondary)
+                    }
+                } else if searchResults.isEmpty {
+                    VStack(spacing: 8) {
+                        Text("No users found")
+                            .foregroundStyle(.secondary)
+                        
+                        if let errorMessage = socialService.errorMessage {
+                            Text("Error: \(errorMessage)")
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                                .multilineTextAlignment(.center)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                } else {
+                    ForEach(searchResults) { user in
+                        NavigationLink {
+                            UserProfileView(
+                                user: user,
+                                socialService: socialService
+                            )
+                        } label: {
+                            FriendRowView(user: user)
+                        }
                     }
                 }
             }
@@ -264,9 +304,16 @@ struct FriendsView: View {
                 await socialService.fetchSuggestedUsers()
                 await socialService.fetchFriendWorkouts()
             }
+        } catch SocialError.profileNotFound {
+            // Profile doesn't exist in CloudKit - clear cache
+            print("⚠️ Profile not found in CloudKit, clearing local cache")
+            socialService.currentUserProfile = nil
+            UserDefaults.standard.removeObject(forKey: "cachedUserProfile")
+            print("✅ Cache cleared, showing profile setup")
         } catch {
-            // User doesn't have a profile yet
-            print("No profile found: \(error)")
+            // Other errors (network, auth, etc.)
+            print("⚠️ Error loading profile: \(error)")
+            // Don't clear cache for network errors - might just be offline
         }
     }
     
