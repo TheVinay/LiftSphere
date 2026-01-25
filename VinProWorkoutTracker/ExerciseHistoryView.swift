@@ -242,7 +242,7 @@ struct ExerciseHistoryView: View {
                                         .font(.caption2)
                                         .foregroundStyle(.secondary)
                                     if let tested = tested1RM {
-                                        Text("\(formatWeight(tested.weight)) lbs")
+                                        Text("\(formatWeight(tested.weight))")
                                             .font(.subheadline.bold())
                                             .foregroundStyle(
                                                 LinearGradient(
