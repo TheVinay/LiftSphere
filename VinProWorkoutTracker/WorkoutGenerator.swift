@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 
 struct GeneratedWorkoutPlan {
     let name: String
@@ -21,14 +22,30 @@ struct WorkoutGenerator {
         freeWeightsOnly: Bool,
         warmupMinutes: Int,
         coreMinutes: Int,
-        stretchMinutes: Int
+        stretchMinutes: Int,
+        context: ModelContext? = nil
     ) -> GeneratedWorkoutPlan {
 
-        let candidates = ExerciseLibrary.forMode(mode,
-                                                 selectedMuscles: selectedMuscles,
-                                                 calisthenicsOnly: calisthenicsOnly,
-                                                 machinesOnly: machinesOnly,
-                                                 freeWeightsOnly: freeWeightsOnly)
+        // Use custom exercise manager if context provided, otherwise fall back to built-in only
+        let candidates: [ExerciseTemplate]
+        if let context = context {
+            candidates = CustomExerciseManager.getExercisesForMode(
+                mode,
+                selectedMuscles: selectedMuscles,
+                calisthenicsOnly: calisthenicsOnly,
+                machinesOnly: machinesOnly,
+                freeWeightsOnly: freeWeightsOnly,
+                context: context
+            )
+        } else {
+            candidates = ExerciseLibrary.forMode(
+                mode,
+                selectedMuscles: selectedMuscles,
+                calisthenicsOnly: calisthenicsOnly,
+                machinesOnly: machinesOnly,
+                freeWeightsOnly: freeWeightsOnly
+            )
+        }
 
         let core = ExerciseLibrary.coreExercises
         let main = Array(candidates.shuffled().prefix(4))

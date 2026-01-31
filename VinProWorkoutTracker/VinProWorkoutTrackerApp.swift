@@ -11,7 +11,12 @@ struct VinProWorkoutTrackerApp: App {
     @State private var authManager = AuthenticationManager()
 
     let sharedModelContainer: ModelContainer = {
-        let schema = Schema([Workout.self, SetEntry.self, CustomWorkoutTemplate.self])
+        let schema = Schema([
+            Workout.self,
+            SetEntry.self,
+            CustomWorkoutTemplate.self,
+            CustomExercise.self
+        ])
         
         // Try with CloudKit first
         let cloudConfig = ModelConfiguration(

@@ -228,7 +228,7 @@ struct ExerciseHistoryView: View {
                             
                             HStack(spacing: 16) {
                                 // Estimated
-                                VStack(alignment: .leading, spacing: 2) {
+                                        VStack(alignment: .leading, spacing: 2) {
                                     Text("Estimated")
                                         .font(.caption2)
                                         .foregroundStyle(.secondary)
@@ -344,11 +344,11 @@ struct ExerciseHistoryView: View {
                         exerciseInfoCard(
                             icon: "figure.strengthtraining.traditional",
                             title: "Primary Muscles",
-                            content: ExerciseDatabase.primaryMuscles(for: exerciseName) ?? "Not available"
+                            content: ExerciseDatabase.primaryMuscles(for: exerciseName, context: context) ?? "Not available"
                         )
                         
                         // How-To
-                        if let instructions = ExerciseDatabase.instructions(for: exerciseName) {
+                        if let instructions = ExerciseDatabase.instructions(for: exerciseName, context: context) {
                             VStack(alignment: .leading, spacing: 12) {
                                 HStack(spacing: 12) {
                                     Image(systemName: "book.closed")
@@ -378,7 +378,7 @@ struct ExerciseHistoryView: View {
                         }
                         
                         // Form Tips
-                        if let tips = ExerciseDatabase.formTips(for: exerciseName) {
+                        if let tips = ExerciseDatabase.formTips(for: exerciseName, context: context) {
                             VStack(alignment: .leading, spacing: 12) {
                                 HStack(spacing: 12) {
                                     Image(systemName: "lightbulb")

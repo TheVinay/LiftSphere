@@ -447,10 +447,15 @@ class SocialService {
         let query = CKQuery(recordType: "FollowRelationship", predicate: predicate)
         
         #if !targetEnvironment(simulator)
-        let existing = try await publicDatabase.records(matching: query)
-        if !existing.matchResults.isEmpty {
-            print("⚠️ Already following this user")
-            throw SocialError.alreadyFollowing
+        do {
+            let existing = try await publicDatabase.records(matching: query)
+            if !existing.matchResults.isEmpty {
+                print("⚠️ Already following this user")
+                throw SocialError.alreadyFollowing
+            }
+        } catch let error as CKError where error.code == .unknownItem {
+            // Record type doesn't exist yet - that's fine, we'll create it below
+            print("ℹ️ FollowRelationship record type will be created automatically")
         }
         #endif
         
@@ -461,9 +466,14 @@ class SocialService {
         )
         
         #if !targetEnvironment(simulator)
-        let record = relationship.toCKRecord()
-        try await publicDatabase.save(record)
-        print("✅ Now following user")
+        do {
+            let record = relationship.toCKRecord()
+            try await publicDatabase.save(record)
+            print("✅ Now following user")
+        } catch let error as CKError {
+            print("❌ Error saving follow relationship: \(error)")
+            throw error
+        }
         #else
         print("⚠️ DEBUG: Simulator - would follow user in real CloudKit")
         #endif
@@ -483,13 +493,18 @@ class SocialService {
         let query = CKQuery(recordType: "FollowRelationship", predicate: predicate)
         
         #if !targetEnvironment(simulator)
-        let results = try await publicDatabase.records(matching: query)
-        
-        for result in results.matchResults {
-            if let record = try? result.1.get() {
-                try await publicDatabase.deleteRecord(withID: record.recordID)
-                print("✅ Unfollowed user")
+        do {
+            let results = try await publicDatabase.records(matching: query)
+            
+            for result in results.matchResults {
+                if let record = try? result.1.get() {
+                    try await publicDatabase.deleteRecord(withID: record.recordID)
+                    print("✅ Unfollowed user")
+                }
             }
+        } catch let error as CKError where error.code == .unknownItem {
+            // Record type doesn't exist - you're not following anyone anyway
+            print("ℹ️ FollowRelationship record type doesn't exist yet")
         }
         #else
         print("⚠️ DEBUG: Simulator - would unfollow user in real CloudKit")
@@ -546,8 +561,20 @@ class SocialService {
             
             self.friends = followingProfiles // Using 'friends' array to store following
             print("✅ Loaded \(followingProfiles.count) user profiles")
+        } catch let error as CKError where error.code == .unknownItem {
+            // Record type doesn't exist yet - this is expected on first run
+            print("ℹ️ FollowRelationship record type not created yet - you're not following anyone")
+            self.friends = []
+            self.errorMessage = nil // Don't show error for missing record type
         } catch {
-            self.errorMessage = error.localizedDescription
+            // Only set error message for real errors (not missing record type)
+            let errorDescription = error.localizedDescription.lowercased()
+            if !errorDescription.contains("record type") && !errorDescription.contains("unknownitem") {
+                self.errorMessage = error.localizedDescription
+            } else {
+                print("ℹ️ FollowRelationship schema not set up yet in CloudKit")
+                self.errorMessage = nil
+            }
             print("❌ Error fetching following: \(error)")
         }
         #endif

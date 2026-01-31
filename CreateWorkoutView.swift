@@ -291,7 +291,8 @@ struct CreateWorkoutView: View {
             freeWeightsOnly: freeWeightsOnly,
             warmupMinutes: Int(warmupMinutes),
             coreMinutes: Int(coreMinutes),
-            stretchMinutes: Int(stretchMinutes)
+            stretchMinutes: Int(stretchMinutes),
+            context: context
         )
         
         generatedPlan = plan

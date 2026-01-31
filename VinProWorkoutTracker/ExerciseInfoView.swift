@@ -3,6 +3,8 @@ import SwiftData
 import Charts
 
 struct ExerciseInfoView: View {
+    @Environment(\.modelContext) private var context
+    
     let exerciseName: String
 
     @Query(sort: \SetEntry.timestamp, order: .reverse)
@@ -163,7 +165,7 @@ struct ExerciseInfoView: View {
     
     private var musclesContent: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if let muscles = ExerciseDatabase.primaryMuscles(for: exerciseName) {
+            if let muscles = ExerciseDatabase.primaryMuscles(for: exerciseName, context: context) {
                 HStack(alignment: .top, spacing: 12) {
                     Image(systemName: "figure.strengthtraining.traditional")
                         .font(.title2)
@@ -194,7 +196,7 @@ struct ExerciseInfoView: View {
     
     private var howToContent: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if let instructions = ExerciseDatabase.instructions(for: exerciseName) {
+            if let instructions = ExerciseDatabase.instructions(for: exerciseName, context: context) {
                 HStack(alignment: .top, spacing: 12) {
                     Image(systemName: "book.closed")
                         .font(.title2)
@@ -232,7 +234,7 @@ struct ExerciseInfoView: View {
     
     private var tipsContent: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if let tips = ExerciseDatabase.formTips(for: exerciseName) {
+            if let tips = ExerciseDatabase.formTips(for: exerciseName, context: context) {
                 HStack(alignment: .top, spacing: 12) {
                     Image(systemName: "lightbulb")
                         .font(.title2)

@@ -1,5 +1,8 @@
 import Foundation
 
+import Foundation
+import SwiftData
+
 /// Centralized database for exercise information
 struct ExerciseDatabase {
     
@@ -1556,3 +1559,45 @@ struct ExerciseDatabase {
         ],
     ]
 }
+
+// MARK: - Custom Exercise Support Extension
+
+extension ExerciseDatabase {
+    /// Get primary muscles for any exercise (built-in or custom)
+    /// Pass in ModelContext to check custom exercises
+    static func primaryMuscles(for exerciseName: String, context: ModelContext?) -> String? {
+        // Check built-in database first
+        if let builtIn = primaryMuscles(for: exerciseName) {
+            return builtIn
+        }
+        
+        // Check custom exercises if context provided
+        guard let context = context else { return nil }
+        return CustomExerciseManager.getPrimaryMuscles(for: exerciseName, context: context)
+    }
+    
+    /// Get instructions for any exercise (built-in or custom)
+    static func instructions(for exerciseName: String, context: ModelContext?) -> [String]? {
+        // Check built-in database first
+        if let builtIn = instructions(for: exerciseName) {
+            return builtIn
+        }
+        
+        // Check custom exercises if context provided
+        guard let context = context else { return nil }
+        return CustomExerciseManager.getInstructions(for: exerciseName, context: context)
+    }
+    
+    /// Get form tips for any exercise (built-in or custom)
+    static func formTips(for exerciseName: String, context: ModelContext?) -> [String]? {
+        // Check built-in database first
+        if let builtIn = formTips(for: exerciseName) {
+            return builtIn
+        }
+        
+        // Check custom exercises if context provided
+        guard let context = context else { return nil }
+        return CustomExerciseManager.getFormTips(for: exerciseName, context: context)
+    }
+}
+

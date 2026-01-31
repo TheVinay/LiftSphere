@@ -3,10 +3,22 @@ import SwiftData
 import Charts
 
 struct AnalyticsView: View {
+    @Environment(\.modelContext) private var context
 
     // MARK: - Data
     @Query(sort: \Workout.date, order: .forward) private var workouts: [Workout]
     @Query(sort: \SetEntry.timestamp, order: .forward) private var sets: [SetEntry]
+    
+    // Custom exercises
+    @Query(filter: #Predicate<CustomExercise> { !$0.isArchived }, sort: \CustomExercise.name)
+    private var customExercises: [CustomExercise]
+    
+    // Combined exercise list
+    private var allExercises: [ExerciseTemplate] {
+        let builtIn = ExerciseLibrary.all
+        let custom = customExercises.map { $0.toTemplate() }
+        return builtIn + custom
+    }
 
     
     // Secondary muscle weighting factor (used only if present)
@@ -449,13 +461,13 @@ struct AnalyticsView: View {
     /// Tries exact match first, then case-insensitive, then trimmed/normalized
     private func findExercise(named name: String) -> ExerciseTemplate? {
         // 1. Exact match (fastest)
-        if let exact = ExerciseLibrary.all.first(where: { $0.name == name }) {
+        if let exact = allExercises.first(where: { $0.name == name }) {
             return exact
         }
         
         // 2. Case-insensitive match
         let nameLower = name.lowercased()
-        if let caseInsensitive = ExerciseLibrary.all.first(where: { $0.name.lowercased() == nameLower }) {
+        if let caseInsensitive = allExercises.first(where: { $0.name.lowercased() == nameLower }) {
             return caseInsensitive
         }
         
@@ -463,7 +475,7 @@ struct AnalyticsView: View {
         let normalized = name.trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "  ", with: " ")
         
-        if let trimmed = ExerciseLibrary.all.first(where: { 
+        if let trimmed = allExercises.first(where: { 
             $0.name.trimmingCharacters(in: .whitespacesAndNewlines)
                 .replacingOccurrences(of: "  ", with: " ") == normalized 
         }) {
@@ -474,7 +486,7 @@ struct AnalyticsView: View {
         let withoutParens = name.components(separatedBy: "(").first?
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? name
         
-        if let matched = ExerciseLibrary.all.first(where: { 
+        if let matched = allExercises.first(where: { 
             $0.name.components(separatedBy: "(").first?
                 .trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == withoutParens.lowercased()
         }) {
@@ -500,7 +512,7 @@ struct AnalyticsView: View {
         var notFound = 0
         
         for exercise in uniqueExercises.sorted() {
-            if ExerciseLibrary.all.contains(where: { $0.name == exercise }) {
+            if allExercises.contains(where: { $0.name == exercise }) {
                 foundExact += 1
                 print("✅ EXACT: \(exercise)")
             } else if let found = findExercise(named: exercise) {

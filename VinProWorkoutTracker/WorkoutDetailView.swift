@@ -665,14 +665,26 @@ private struct AccessoryEditorView: View {
 // MARK: - Exercise Picker Sheet
 
 private struct ExercisePickerSheet: View {
+    @Environment(\.modelContext) private var context
     @Binding var isPresented: Bool
     let onSelect: (String) -> Void
     
     @State private var searchText = ""
     @State private var selectedMuscleFilter: MuscleGroup?
     
+    // Query custom exercises
+    @Query(filter: #Predicate<CustomExercise> { !$0.isArchived }, sort: \CustomExercise.name)
+    private var customExercises: [CustomExercise]
+    
+    private var allExercises: [ExerciseTemplate] {
+        // Combine built-in and custom exercises
+        let builtIn = ExerciseLibrary.all
+        let custom = customExercises.map { $0.toTemplate() }
+        return builtIn + custom
+    }
+    
     private var filteredExercises: [ExerciseTemplate] {
-        var exercises = ExerciseLibrary.all
+        var exercises = allExercises
         
         // Filter by muscle group if selected
         if let muscle = selectedMuscleFilter {
@@ -724,8 +736,29 @@ private struct ExercisePickerSheet: View {
                         } label: {
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(exercise.name)
-                                        .foregroundColor(.primary)
+                                    HStack(spacing: 6) {
+                                        Text(exercise.name)
+                                            .foregroundColor(.primary)
+                                        
+                                        // Custom badge
+                                        if customExercises.contains(where: { $0.name == exercise.name }) {
+                                            Text("CUSTOM")
+                                                .font(.caption2.weight(.semibold))
+                                                .foregroundStyle(.white)
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
+                                                .background(
+                                                    Capsule()
+                                                        .fill(
+                                                            LinearGradient(
+                                                                colors: [.blue, .purple],
+                                                                startPoint: .leading,
+                                                                endPoint: .trailing
+                                                            )
+                                                        )
+                                                )
+                                        }
+                                    }
                                     
                                     HStack(spacing: 8) {
                                         Text(exercise.muscleGroup.displayName)

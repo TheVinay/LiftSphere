@@ -1,7 +1,11 @@
     import SwiftUI
+    import SwiftUI
     import SwiftData
+    import UIKit
 
     struct LearnView: View {
+        @Environment(\.modelContext) private var context
+        
         @State private var searchText: String = ""
         @State private var selectedMuscle: MuscleGroup? = nil
         @State private var selectedEquipment: Equipment? = nil
@@ -18,14 +22,28 @@
         // Help sheet
         @State private var showHelp = false
         
+        // Create exercise sheet
+        @State private var showCreateExercise = false
+        
+        // Delete confirmation
+        @State private var exerciseToDelete: CustomExercise? = nil
+        @State private var showDeleteConfirmation = false
+        @State private var deleteInfo: CustomExerciseManager.DeleteInfo? = nil
+        
         // Query for recent exercises
         @Query(sort: \SetEntry.timestamp, order: .reverse)
         private var allSets: [SetEntry]
+        
+        // Query for custom exercises
+        @Query(filter: #Predicate<CustomExercise> { !$0.isArchived }, sort: \CustomExercise.name)
+        private var customExercises: [CustomExercise]
 
         // MARK: - Derived data
 
         private var allExercises: [ExerciseTemplate] {
-            ExerciseLibrary.all
+            let builtIn = ExerciseLibrary.all
+            let custom = customExercises.map { $0.toTemplate() }
+            return builtIn + custom
         }
 
         private var filteredExercises: [ExerciseTemplate] {
@@ -78,10 +96,11 @@
 
         var body: some View {
             NavigationStack {
-                VStack(spacing: 0) {
-                    headerControls
+                ZStack(alignment: .bottomTrailing) {
+                    VStack(spacing: 0) {
+                        headerControls
 
-                    List {
+                        List {
                         // Favorites Section (Always Expanded - Non-collapsible)
                         if !favoriteExercisesList.isEmpty {
                             Section("⭐ Favorites") {
@@ -157,6 +176,31 @@
                     .animation(.spring(response: 0.35, dampingFraction: 0.85), value: bodyweightOnly)
                     .animation(.spring(response: 0.35, dampingFraction: 0.85), value: searchText)
                 }
+                
+                // Floating Action Button
+                Button {
+                    showCreateExercise = true
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.title2.weight(.semibold))
+                        .foregroundColor(.white)
+                        .frame(width: 56, height: 56)
+                        .background(
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [.blue, .purple],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                        )
+                }
+                .padding(.trailing, 20)
+                .padding(.bottom, 20)
+                .accessibilityLabel("Create custom exercise")
+            }
                 .navigationTitle("LiftSphere Workout")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -172,6 +216,22 @@
                 }
                 .sheet(isPresented: $showHelp) {
                     HelpView()
+                }
+                .sheet(isPresented: $showCreateExercise) {
+                    CreateExerciseView()
+                }
+                .alert(deleteInfo?.action == .hardDelete ? "Delete Exercise?" : "Archive Exercise?", isPresented: $showDeleteConfirmation, presenting: deleteInfo) { info in
+                    Button("Cancel", role: .cancel) {
+                        exerciseToDelete = nil
+                    }
+                    
+                    Button(info.confirmButtonText, role: info.action == .hardDelete ? .destructive : .none) {
+                        if let exercise = exerciseToDelete {
+                            deleteExercise(exercise)
+                        }
+                    }
+                } message: { info in
+                    Text(info.message)
                 }
                 .onAppear {
                     loadFavorites()
@@ -279,6 +339,7 @@
         private func exerciseRow(template: ExerciseTemplate) -> some View {
             let stats = getExerciseStats(for: template.name)
             let isFavorite = favoriteExercises.contains(template.name)
+            let isCustom = customExercises.contains(where: { $0.name == template.name })
             
             return NavigationLink {
                 ExerciseInfoView(exerciseName: template.name)
@@ -286,9 +347,30 @@
             } label: {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(template.name)
-                            .font(.body)
-                            .fontWeight(.medium)
+                        HStack(spacing: 6) {
+                            Text(template.name)
+                                .font(.body)
+                                .fontWeight(.medium)
+                            
+                            // Custom badge
+                            if isCustom {
+                                Text("CUSTOM")
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(
+                                        Capsule()
+                                            .fill(
+                                                LinearGradient(
+                                                    colors: [.blue, .purple],
+                                                    startPoint: .leading,
+                                                    endPoint: .trailing
+                                                )
+                                            )
+                                    )
+                            }
+                        }
 
                         Text(templateSubtitle(for: template))
                             .font(.caption)
@@ -342,6 +424,16 @@
                 .padding(.vertical, 4)
                 .contentTransition(.opacity)
             }
+            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                // Only show delete for custom exercises
+                if isCustom, let customExercise = customExercises.first(where: { $0.name == template.name }) {
+                    Button(role: .destructive) {
+                        prepareToDelete(customExercise)
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                }
+            }
         }
 
         // MARK: - Helpers
@@ -385,6 +477,33 @@
         private func saveFavorites() {
             if let encoded = try? JSONEncoder().encode(favoriteExercises) {
                 favoriteExercisesData = encoded
+            }
+        }
+        
+        // MARK: - Delete Custom Exercise
+        
+        private func prepareToDelete(_ exercise: CustomExercise) {
+            exerciseToDelete = exercise
+            deleteInfo = CustomExerciseManager.getDeleteInfo(for: exercise, context: context)
+            showDeleteConfirmation = true
+        }
+        
+        private func deleteExercise(_ exercise: CustomExercise) {
+            do {
+                try CustomExerciseManager.deleteExercise(exercise, context: context)
+                
+                // Remove from favorites if it was favorited
+                favoriteExercises.remove(exercise.name)
+                saveFavorites()
+                
+                // Haptic feedback
+                let generator = UINotificationFeedbackGenerator()
+                generator.notificationOccurred(.success)
+                
+                exerciseToDelete = nil
+                
+            } catch {
+                print("❌ Failed to delete exercise: \(error)")
             }
         }
 
