@@ -23,12 +23,19 @@ It focuses on clarity, speed, and ownership of your data.
 
 ## Screenshots
 
-![Train](screenshots/image1.jpg)
-![Log](screenshots/image2.jpg)
-![Understand](screenshots/image3.jpg)
-![Consistency](screenshots/image3.jpg)
-![Insights](screenshots/image3.jpg)
-![Private](screenshots/image3.jpg)
+<p align="center">
+  <img src="screenshots/home.png" width="250">
+  <img src="screenshots/workout.png" width="250">
+  <img src="screenshots/progress.png" width="250">
+</p>
+
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/image1.jpg" width="280">
+  <img src="screenshots/image2.jpg" width="280">
+  <img src="screenshots/image3.jpg" width="280">
+</p>
 
 ## Tech Stack
 
