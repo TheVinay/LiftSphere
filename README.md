@@ -22,13 +22,21 @@ It focuses on clarity, speed, and ownership of your data.
 
 
 ## Screenshots
-
 <p align="center">
-  <img src="screenshots/home.png" width="250">
-  <img src="screenshots/workout.png" width="250">
-  <img src="screenshots/progress.png" width="250">
+  <img src="screenshots/image1.jpg" width="420">
+  <img src="screenshots/image2.jpg" width="420">
 </p>
 
+---
+
+## Smart Features
+
+<p align="center">
+  <img src="screenshots/image4.jpg" width="300">
+  <img src="screenshots/image5.jpg" width="300">
+</p>
+
+---
 ## Screenshots
 
 <p align="center">
