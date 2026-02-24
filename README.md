@@ -23,9 +23,12 @@ It focuses on clarity, speed, and ownership of your data.
 
 ## Screenshots
 
-![Home](screenshots/home.png)
-![Workout](screenshots/workout.png)
-![Progress](screenshots/progress.png)
+![Train](screenshots/image1.jpg)
+![Log](screenshots/image2.jpg)
+![Understand](screenshots/image3.jpg)
+![Consistency](screenshots/image3.jpg)
+![Insights](screenshots/image3.jpg)
+![Private](screenshots/image3.jpg)
 
 ## Tech Stack
 
